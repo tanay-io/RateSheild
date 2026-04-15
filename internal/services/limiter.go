@@ -10,6 +10,5 @@ type Result struct {
 }
 
 type Limiter interface {
-	Allow(ctx context.Context, key string, window, limit int) (Result, error)
-	
+	Allow(ctx context.Context, key string, window, limit int, algo string) (Result, error)
 }

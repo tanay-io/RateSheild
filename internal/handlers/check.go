@@ -31,7 +31,7 @@ func Check(limiter services.Limiter) http.HandlerFunc {
 		ctx := r.Context()
 
 		if limiter != nil {
-			res, err := limiter.Allow(ctx, req.Key, req.Window, req.Limit)
+			res, err := limiter.Allow(ctx, req.Key, req.Window, req.Limit , req.Algo)
 			if err != nil {
 				http.Error(w, "internal service error", http.StatusInternalServerError)
 				return

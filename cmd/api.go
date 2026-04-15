@@ -8,10 +8,12 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/tanay-io/RateSheild/internal/handlers"
+	"github.com/tanay-io/RateSheild/internal/services"
 )
 
 type API struct {
-	Config Config
+	Config  Config
+	Limiter services.Limiter  // Injecting the service into API
 }
 type Config struct {
 	Addr     string
@@ -33,7 +35,7 @@ func (app *API) mount() http.Handler {
 		log.Println("healthy!")
 	})
 
-	r.Post("/check", handlers.Check(nil))
+	r.Post("/check", handlers.Check(app.Limiter))
 
 	return r
 }

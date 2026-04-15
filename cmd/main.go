@@ -6,22 +6,40 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/tanay-io/RateSheild/internal/services"
 )
 
 func main() {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", 
+		DB:       0, 
+		Protocol: 2,
+	})
+	
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		log.Fatalf("Could not connect to Redis: %v", err)
+	}
+	log.Println("Connected to Redis successfully.")
+
+	limiter := services.NewFixedWindow(rdb)
+
 	dbConfig := dbConfig{
 		Host:     "localhost",
-		Port:     5432,
-		User:     "postgres",
-		Password: "[PASSWORD]",
-		DBName:   "postgres",
+		Port:     6379,
+		User:     "default",
+		Password: "",
+		DBName:   "RateSheild",
 	}
 	cfg := Config{
 		Addr:     ":3000",
 		DbConfig: dbConfig,
 	}
 	app := API{
-		Config: cfg,
+		Config:  cfg,
+		Limiter: limiter,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
