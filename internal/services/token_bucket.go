@@ -15,6 +15,7 @@ func  NewTokenBucketService (repo *repository.Algo) (t *token_bucket) {
 } 
 func (t *token_bucket) Allow(ctx context.Context, key string, window, limit int )(models.RateLimitResponse,error){
 	res,err := t.repo.CheckTokenBucket(ctx ,key ,window,limit,"token_bucket")
+	//here window is the time it takes two completely fill the bucket 	
 	if err!= nil{
 		return models.RateLimitResponse{},err
 	}
