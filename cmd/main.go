@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/tanay-io/RateSheild/internal/repository"
 	"github.com/tanay-io/RateSheild/internal/services"
 )
 
@@ -24,7 +25,9 @@ func main() {
 	}
 	log.Println("Connected to Redis successfully.")
 
-	limiter := services.NewFixedWindow(rdb)
+	repo := repository.NewAlgo(rdb)
+	fixedWindow := services.NewFixedWindowLimiter(repo)
+	limiterService := services.NewRateLimiterService(fixedWindow)
 
 	dbConfig := dbConfig{
 		Host:     "localhost",
@@ -39,7 +42,7 @@ func main() {
 	}
 	app := API{
 		Config:  cfg,
-		Limiter: limiter,
+		Limiter: limiterService,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

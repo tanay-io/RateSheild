@@ -13,7 +13,7 @@ import (
 
 type API struct {
 	Config  Config
-	Limiter services.Limiter  // Injecting the service into API
+	Limiter *services.RateLimiterService  // Injecting the service router into API
 }
 type Config struct {
 	Addr     string

@@ -2,54 +2,30 @@ package services
 
 import (
 	"context"
-	"fmt"
-	"time"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/tanay-io/RateSheild/internal/models"
+	"github.com/tanay-io/RateSheild/internal/repository"
 )
 
-type FixedWindow struct{
-	rdb *redis.Client
+type FixedWindowLimiter struct {
+	repo *repository.Algo
 }
 
-func NewFixedWindow(rdb *redis.Client) *FixedWindow {
-	return &FixedWindow{rdb: rdb}
+func NewFixedWindowLimiter(repo *repository.Algo) *FixedWindowLimiter {
+	return &FixedWindowLimiter{repo: repo}
 }
 
-func (fw *FixedWindow) Allow(ctx context.Context, key string, window, limit int, algo string) (Result, error) {
-	now := time.Now().Unix()
-	windowStartUnix := (now / int64(window)) * int64(window)
-	redisKey := fmt.Sprintf("rl:%s:%s:%d", algo, key, windowStartUnix)
-	windowDuration := time.Duration(window) * time.Second
-	pipe := fw.rdb.TxPipeline()
-	incrRes := pipe.Incr(ctx,redisKey)
-	pipe.Expire(ctx, redisKey, windowDuration) 
-	_, err := pipe.Exec(ctx)
+func (f *FixedWindowLimiter) Allow(ctx context.Context, key string, window, limit int) (models.RateLimitResponse, error) {
+
+	res, err := f.repo.CheckFixedWindow(ctx, key, window, limit, "fixed")
 	if err != nil {
-		return Result{}, err
+		return models.RateLimitResponse{}, err
 	}
 
-	count := int(incrRes.Val())
-	allowed := count <= limit
-
-	remaining := limit - count
-	if remaining < 0 {
-		remaining = 0
-	}
-
-	retryAfter := 0
-	if !allowed {
-		windowEndUnix := windowStartUnix + int64(window)
-		retryAfter = int(windowEndUnix - now)
-	}
-
-	fmt.Println("Generated Redis Key:", redisKey, "Count:", count, "TTL:", window, "seconds")
-	
-	return Result{
-		Allowed:    allowed,
-		Limit:      limit,
-		Remaining:  remaining,
-		RetryAfter: retryAfter,
+	return models.RateLimitResponse{
+		Allowed:    res.Allowed,
+		Limit:      res.Limit,
+		Remaining:  res.Remaining,
+		RetryAfter: res.RetryAfter,
 	}, nil
 }
-

@@ -14,7 +14,7 @@ type Request struct {
 	Limit  int    `json:"limit"`
 }
 
-func Check(limiter services.Limiter) http.HandlerFunc {
+func Check(limiter *services.RateLimiterService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req Request
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -31,7 +31,7 @@ func Check(limiter services.Limiter) http.HandlerFunc {
 		ctx := r.Context()
 
 		if limiter != nil {
-			res, err := limiter.Allow(ctx, req.Key, req.Window, req.Limit , req.Algo)
+			res, err := limiter.Allow(ctx, req.Key, req.Window, req.Limit, req.Algo)
 			if err != nil {
 				http.Error(w, "internal service error", http.StatusInternalServerError)
 				return
