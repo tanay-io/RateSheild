@@ -150,3 +150,46 @@ func (a *Algo) CheckTokenBucket(  ctx context.Context, key string,   window int,
         Remaining: int(tokens),
     }, nil
 }
+
+func (a *Algo) CheckSlidingWindow_Script(ctx context.Context,key string,window int,limit int,algo string,) (models.RateLimitResponse, error) {
+	member, now, err := generateMember()
+	if err != nil {
+		return models.RateLimitResponse{}, err
+	}
+	windowMs := int64(window)
+	redisKey := fmt.Sprintf("rl:%s:%s", algo, key)
+	res, err := slidingWindowScript.Run(
+		ctx,
+		a.rdb,
+		[]string{redisKey},
+		now,
+		windowMs,
+		limit,
+		member,
+	).Result()
+	if err != nil {
+		return models.RateLimitResponse{}, err
+	}
+	vals, ok := res.([]interface{})
+	if !ok {
+		return models.RateLimitResponse{}, fmt.Errorf("unexpected response type")
+	}
+
+	if len(vals) < 3 {
+		return models.RateLimitResponse{}, fmt.Errorf("invalid lua response")
+	}
+
+	allowed := vals[0].(int64) == 1
+
+	remainingVal, ok := vals[2].(int64)
+	if !ok {
+		return models.RateLimitResponse{}, fmt.Errorf("invalid remaining type")
+	}
+
+	return models.RateLimitResponse{
+		Allowed:    allowed,
+		Limit:      limit,
+		Remaining:  int(remainingVal),
+		RetryAfter: 0,
+	}, nil
+}
