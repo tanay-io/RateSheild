@@ -30,7 +30,9 @@ func (s *RateLimiterService) Allow(ctx context.Context, key string, window, limi
 	case "fixed":
 		return s.fixedLimiter.Allow(ctx, key, window, limit)
 	case "sliding":
-		return s.Sliding_window.Allow(ctx ,key,window,limit)
+		return s.Sliding_window.Allow(ctx, key, window, limit)
+	case "token_bucket":
+		return s.Token_bucket.Allow(ctx, key, window, limit)
 	default:
 		return models.RateLimitResponse{}, fmt.Errorf("unknown algorithm")
 	}
