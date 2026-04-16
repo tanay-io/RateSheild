@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+
 	"github.com/tanay-io/RateSheild/internal/models"
 )
 
@@ -12,11 +13,13 @@ type Limiter interface {
 
 type RateLimiterService struct {
 	fixedLimiter Limiter
+	Sliding_window Limiter
 }
 
-func NewRateLimiterService(lim Limiter) *RateLimiterService {
+func NewRateLimiterService(fixed Limiter, sliding Limiter) *RateLimiterService {
 	return &RateLimiterService{
-		fixedLimiter: lim,
+		fixedLimiter: fixed,
+		Sliding_window: sliding,
 	}
 }
 
@@ -24,6 +27,8 @@ func (s *RateLimiterService) Allow(ctx context.Context, key string, window, limi
 	switch algo {
 	case "fixed":
 		return s.fixedLimiter.Allow(ctx, key, window, limit)
+	case "sliding":
+		return s.Sliding_window.Allow(ctx ,key,window,limit)
 	default:
 		return models.RateLimitResponse{}, fmt.Errorf("unknown algorithm")
 	}

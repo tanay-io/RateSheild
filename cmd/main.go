@@ -27,7 +27,8 @@ func main() {
 
 	repo := repository.NewAlgo(rdb)
 	fixedWindow := services.NewFixedWindowLimiter(repo)
-	limiterService := services.NewRateLimiterService(fixedWindow)
+	slidingWindow := services.NewSlidingWindowService(repo)
+	limiterService := services.NewRateLimiterService(fixedWindow, slidingWindow)
 
 	dbConfig := dbConfig{
 		Host:     "localhost",
