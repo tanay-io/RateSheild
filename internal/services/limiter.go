@@ -14,12 +14,14 @@ type Limiter interface {
 type RateLimiterService struct {
 	fixedLimiter Limiter
 	Sliding_window Limiter
+	Token_bucket Limiter
 }
 
-func NewRateLimiterService(fixed Limiter, sliding Limiter) *RateLimiterService {
+func NewRateLimiterService(fixed Limiter, sliding Limiter,token Limiter) *RateLimiterService {
 	return &RateLimiterService{
 		fixedLimiter: fixed,
 		Sliding_window: sliding,
+		Token_bucket: token,
 	}
 }
 

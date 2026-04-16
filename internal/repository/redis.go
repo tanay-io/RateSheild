@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -57,8 +58,9 @@ func (a * Algo) CheckSlidingWindow(ctx context.Context, key string, window, limi
 		return models.RateLimitResponse{}, err
 	}
 
-	windowStartUnix := now - int64(window*1000)
-	redisKey := fmt.Sprintf("rl:%s:%s", algo, key)
+windowMs := int64(window)
+windowStartUnix := now - windowMs	
+redisKey := fmt.Sprintf("rl:%s:%s", algo, key )
 	pipe := a.rdb.TxPipeline()
 	//remove all the req older than the hmara jaha se vo window start hua hai
 	pipe.ZRemRangeByScore(ctx, redisKey, "0", fmt.Sprintf("%d", windowStartUnix))
@@ -69,8 +71,7 @@ func (a * Algo) CheckSlidingWindow(ctx context.Context, key string, window, limi
 	})
 
 	countReq := pipe.ZCard(ctx, redisKey)
-	pipe.Expire(ctx, redisKey, time.Duration(window)*time.Second) 
-	
+pipe.Expire(ctx, redisKey, time.Duration(windowMs)*time.Millisecond)	
 	_, err = pipe.Exec(ctx)
 	if err != nil {
 		return models.RateLimitResponse{}, err
@@ -90,4 +91,62 @@ func (a * Algo) CheckSlidingWindow(ctx context.Context, key string, window, limi
 			RetryAfter: 0,
 		},nil
 	
+}
+func (a *Algo) CheckTokenBucket(  ctx context.Context, key string,   window int, limit int, algo string,) (models.RateLimitResponse, error) {
+
+    now := time.Now().UnixMilli()
+    redisKey := fmt.Sprintf("r1:%s:%s", algo, key)
+
+    capacity := int64(limit)
+    windowMs := int64(window)
+
+    vals, err := a.rdb.HMGet(ctx, redisKey, "tokens", "last_refill").Result()
+    if err != nil {
+        return models.RateLimitResponse{}, err
+    }
+
+    var tokens int64
+    var lastRefill int64
+
+    if vals[0] == nil || vals[1] == nil {
+        tokens = capacity
+        lastRefill = now
+    } else {
+        tokens, _ = strconv.ParseInt(vals[0].(string), 10, 64)
+        lastRefill, _ = strconv.ParseInt(vals[1].(string), 10, 64)
+    }
+
+    timePassed := now - lastRefill
+    if timePassed > 0 {
+        tokensToAdd := (timePassed * capacity) / windowMs
+        if tokensToAdd > 0 {
+            tokens = min(capacity, tokens+tokensToAdd)
+			//important line we saved .sometime here ex if 10000ms is now but we add 2 tokens if we did lastrefill now we would be adding only 2tokens we wasted 0.5ms 
+			//but by doing this tokens to add 2 * 10000 / capacity(limit)=>exact amount of time taken that we add to lastrefill
+            lastRefill += (tokensToAdd * windowMs) / capacity
+        }
+    }
+
+    allowed := false
+    if tokens > 0 {
+        tokens--
+        allowed = true
+    }
+
+    pipe := a.rdb.TxPipeline()
+    pipe.HSet(ctx, redisKey, map[string]interface{}{
+        "tokens":      tokens,
+        "last_refill": lastRefill,
+    })
+    pipe.Expire(ctx, redisKey, time.Duration(windowMs*2)*time.Millisecond)
+
+    _, err = pipe.Exec(ctx)
+    if err != nil {
+        return models.RateLimitResponse{}, err
+    }
+
+    return models.RateLimitResponse{
+        Allowed:   allowed,
+        Remaining: int(tokens),
+    }, nil
 }
