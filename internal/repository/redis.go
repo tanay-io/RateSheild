@@ -82,6 +82,7 @@ func (a * Algo) CheckSlidingWindow(ctx context.Context, key string, window, limi
 		if(remaining < 0){
 			remaining=0;
 		}
+		fmt.Println("COUNT:", count, "LIMIT:", limit)
 		return models.RateLimitResponse{
 			Allowed: allowed,
 			Limit: limit,

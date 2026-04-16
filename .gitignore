@@ -31,3 +31,5 @@ docker-compose.yml
 # Editor/IDE
 # .idea/
 # .vscode/
+
+run_bench.cmd

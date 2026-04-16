@@ -19,6 +19,7 @@ func (s *Sliding_window ) Allow(ctx context.Context, key string, window, limit i
 	if err != nil {
 		return models.RateLimitResponse{}, err
 	}
+	
 	return models.RateLimitResponse{
 		Allowed: res.Allowed,
 		Limit: res.Limit,
