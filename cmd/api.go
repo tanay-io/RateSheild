@@ -8,24 +8,19 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/tanay-io/RateSheild/internal/handlers"
+	"github.com/tanay-io/RateSheild/internal/repository"
 	"github.com/tanay-io/RateSheild/internal/services"
 )
 
 type API struct {
 	Config  Config
 	Limiter *services.RateLimiterService  // Injecting the service router into API
+	DB *repository.DB
 }
 type Config struct {
 	Addr     string
-	DbConfig dbConfig
 }
-type dbConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
-}
+
 
 func (app *API) mount() http.Handler {
 	r := chi.NewRouter()
