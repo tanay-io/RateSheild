@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/tanay-io/RateSheild/internal/db"
 	"github.com/tanay-io/RateSheild/internal/handlers"
-	"github.com/tanay-io/RateSheild/internal/repository"
 	"github.com/tanay-io/RateSheild/internal/services"
 )
 
 type API struct {
 	Config  Config
 	Limiter *services.RateLimiterService  // Injecting the service router into API
-	DB *repository.DB
+	DB *db.DB
 }
 type Config struct {
 	Addr     string

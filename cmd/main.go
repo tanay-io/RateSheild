@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/tanay-io/RateSheild/internal/db"
 	"github.com/tanay-io/RateSheild/internal/repository"
 	"github.com/tanay-io/RateSheild/internal/services"
 	"gorm.io/driver/postgres"
@@ -22,7 +23,7 @@ func main() {
 	})
 	//sample url abhi orignal env ke through ayegi 
 	dsn := "postgres://user:pass@localhost:5432/rateshield"
-	dbRepo, err := repository.NewDB(postgres.Open(dsn))
+	dbRepo, err := db.NewDB(postgres.Open(dsn))
 	if(err!=nil){
 		log.Fatalf("Could not connect to Database: %v", err)
 	}
