@@ -7,15 +7,18 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/tanay-io/RateSheild/internal/db"
 	"github.com/tanay-io/RateSheild/internal/handlers"
-	"github.com/tanay-io/RateSheild/internal/services"
+	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
+	"gorm.io/gorm"
 )
 
 type API struct {
 	Config  Config
-	Limiter *services.RateLimiterService  // Injecting the service router into API
-	DB *db.DB
+	Limiter *ratelimiter.RateLimiterService  // Injecting the service router into API
+	DB *gorm.DB
+}
+type DB struct {
+	db *gorm.DB
 }
 type Config struct {
 	Addr     string

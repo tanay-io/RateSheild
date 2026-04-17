@@ -8,10 +8,11 @@ import (
 	"syscall"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/tanay-io/RateSheild/internal/db"
+	"github.com/tanay-io/RateSheild/internal/models"
 	"github.com/tanay-io/RateSheild/internal/repository"
-	"github.com/tanay-io/RateSheild/internal/services"
+	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
 	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -23,9 +24,13 @@ func main() {
 	})
 	//sample url abhi orignal env ke through ayegi 
 	dsn := "postgres://user:pass@localhost:5432/rateshield"
-	dbRepo, err := db.NewDB(postgres.Open(dsn))
+	dbRepo, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if(err!=nil){
 		log.Fatalf("Could not connect to Database: %v", err)
+	}
+	
+	if err := dbRepo.AutoMigrate(&models.APIKey{}); err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
 	}
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		log.Fatalf("Could not connect to Redis: %v", err)
@@ -33,10 +38,10 @@ func main() {
 	log.Println("Connected to Redis successfully.")
 
 	repo := repository.NewAlgo(rdb)
-	fixedWindow := services.NewFixedWindowLimiter(repo)
-	slidingWindow := services.NewSlidingWindowService(repo)
-	token_bucket := services.NewTokenBucketService(repo)
-	limiterService := services.NewRateLimiterService(fixedWindow, slidingWindow ,token_bucket)
+	fixedWindow := ratelimiter.NewFixedWindowLimiter(repo)
+	slidingWindow := ratelimiter.NewSlidingWindowService(repo)
+	token_bucket := ratelimiter.NewTokenBucketService(repo)
+	limiterService := ratelimiter.NewRateLimiterService(fixedWindow, slidingWindow ,token_bucket)
 
 	cfg := Config{
 		Addr:     ":3000",

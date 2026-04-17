@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/tanay-io/RateSheild/internal/services"
+	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
 )
 
 type Request struct {
@@ -14,7 +14,7 @@ type Request struct {
 	Limit  int    `json:"limit"`
 }
 
-func Check(limiter *services.RateLimiterService) http.HandlerFunc {
+func Check(limiter *ratelimiter.RateLimiterService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req Request
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

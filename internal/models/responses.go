@@ -6,3 +6,7 @@ type RateLimitResponse struct {
 	Remaining  int
 	RetryAfter int
 }
+
+type MakeAPiKeyResponse struct {
+	Key string
+}
