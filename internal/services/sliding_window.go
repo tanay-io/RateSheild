@@ -15,7 +15,7 @@ func NewSlidingWindowService (repo *repository.Algo) *Sliding_window {
 	return &Sliding_window{repo: repo}
 }
 func (s *Sliding_window ) Allow(ctx context.Context, key string, window, limit int ) (models.RateLimitResponse, error) {
-	res, err := s.repo.CheckSlidingWindow(ctx , key ,window,limit ,"sliding")
+	res, err := s.repo.CheckSlidingWindow_via_Lua(ctx , key ,window,limit ,"sliding")
 	if err != nil {
 		return models.RateLimitResponse{}, err
 	}

@@ -51,7 +51,6 @@ func (a *Algo) CheckFixedWindow(ctx context.Context, key string, window, limit i
 		RetryAfter: retryAfter,
 	}, nil
 }
-
 func (a * Algo) CheckSlidingWindow(ctx context.Context, key string, window, limit int, algo string)(models.RateLimitResponse, error){
 	member, now, err:= generateMember()
 		if err != nil {
@@ -151,7 +150,7 @@ func (a *Algo) CheckTokenBucket(  ctx context.Context, key string,   window int,
     }, nil
 }
 
-func (a *Algo) CheckSlidingWindow_Script(ctx context.Context,key string,window int,limit int,algo string,) (models.RateLimitResponse, error) {
+func (a *Algo) CheckSlidingWindow_via_Lua(ctx context.Context,key string,window int,limit int,algo string,) (models.RateLimitResponse, error) {
 	member, now, err := generateMember()
 	if err != nil {
 		return models.RateLimitResponse{}, err
@@ -192,4 +191,47 @@ func (a *Algo) CheckSlidingWindow_Script(ctx context.Context,key string,window i
 		Remaining:  int(remainingVal),
 		RetryAfter: 0,
 	}, nil
+}
+
+func (a *Algo) CheckTokenBucket_via_Lua(ctx context.Context,key string,window int,limit int,algo string,)(models.RateLimitResponse , error){
+	now := time.Now().UnixMilli()
+	redisKey := fmt.Sprintf("r1:%s:%s", algo, key)
+	capacity := int64(limit)
+    windowMs := int64(window)
+	res,err := tokenBucketScript.Run(
+		ctx,
+		a.rdb,
+		[]string{redisKey},
+		now,
+		windowMs,
+		capacity,
+	).Result()
+
+	if err!=nil{
+		return models.RateLimitResponse{},err
+	}
+	vals,ok := res.([]interface{})
+	if !ok {
+		return models.RateLimitResponse{}, fmt.Errorf("unexpected response type")
+	}
+
+	if len(vals) < 2 {
+		return models.RateLimitResponse{}, fmt.Errorf("invalid lua response")
+	}
+	
+	allowedVal, ok := vals[0].(int64)
+	if !ok {
+	return models.RateLimitResponse{}, fmt.Errorf("invalid allowed type")
+			}
+		allowed := allowedVal == 1
+
+	tokens, ok := vals[1].(int64)
+	if !ok {
+		return models.RateLimitResponse{}, fmt.Errorf("invalid remaining type")
+	}
+	return models.RateLimitResponse{
+		Allowed: allowed,
+		Remaining:int(tokens),
+	},nil
+
 }
