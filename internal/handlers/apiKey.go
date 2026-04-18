@@ -9,9 +9,8 @@ import (
 
 
 type MakeAPiKeyRequest struct {
-	UserId string `json:"userId"`
+	UserId uint `json:"userId"`
     Name   string  `json:"name"`
-	Revoked bool   `json:"revoked"`
 }
 
 func CreateApiKey(authService *app.Auth) http.HandlerFunc {
@@ -22,11 +21,22 @@ func CreateApiKey(authService *app.Auth) http.HandlerFunc {
 			http.Error(w, "bad req", http.StatusBadRequest)
 			return
 		}
-	if req.Name=="" || req.Revoked!=false ||req.UserId ==""{
+	if req.Name==""  ||req.UserId == 0 {
 					w.Header().Set("Content-Type", "application/json")
-			http.Error(w, "bad req", http.StatusBadRequest)
+			http.Error(w, "name and userId are required", http.StatusBadRequest)
 			return
 		}
+		ctx := r.Context()
+
+		res,err := authService.CreateApiKey(ctx ,req.UserId,req.Name,false)
+	if err != nil {
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type","application/json")
+		json.NewEncoder(w).Encode(res)
+
+		
 	}
 	
 }

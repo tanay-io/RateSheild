@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/tanay-io/RateSheild/internal/handlers"
+	"github.com/tanay-io/RateSheild/internal/services/app"
 	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
 	"gorm.io/gorm"
 )
@@ -15,6 +16,7 @@ import (
 type API struct {
 	Config  Config
 	Limiter *ratelimiter.RateLimiterService  // Injecting the service router into API
+	Auth    *app.Auth
 	DB *gorm.DB
 }
 type DB struct {
@@ -34,6 +36,7 @@ func (app *API) mount() http.Handler {
 	})
 
 	r.Post("/check", handlers.Check(app.Limiter))
+	r.Post("/apikey", handlers.CreateApiKey(app.Auth))
 
 	return r
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/tanay-io/RateSheild/internal/models"
 	"github.com/tanay-io/RateSheild/internal/repository"
+	"github.com/tanay-io/RateSheild/internal/services/app"
 	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -29,7 +30,7 @@ func main() {
 		log.Fatalf("Could not connect to Database: %v", err)
 	}
 	
-	if err := dbRepo.AutoMigrate(&models.APIKey{}); err != nil {
+	if err := dbRepo.AutoMigrate(&models.APIKey{},&models.User{}); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
@@ -43,13 +44,18 @@ func main() {
 	token_bucket := ratelimiter.NewTokenBucketService(repo)
 	limiterService := ratelimiter.NewRateLimiterService(fixedWindow, slidingWindow ,token_bucket)
 
+	db:= repository.NewDB(dbRepo)
+	apiKey := app.NewAuth(db)
+	
+
 	cfg := Config{
 		Addr:     ":3000",
 	}
 	app := API{
 		Config:  cfg,
 		Limiter: limiterService,
-		DB:dbRepo,
+		Auth:    apiKey,
+		DB:      dbRepo,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

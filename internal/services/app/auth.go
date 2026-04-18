@@ -14,6 +14,12 @@ func NewAuth(db *repository.Database) *Auth {
 	return &Auth{db : db}
 }
 
-func (a *Auth)CreateApiKey(ctx context.Context , userId string , name string , revoked bool) (models.MakeAPiKeyResponse,error){
-	
+func (a *Auth)CreateApiKey(ctx context.Context , userId uint , name string , revoked bool) (models.MakeAPiKeyResponse,error){
+	res,err := a.db.MakeAPiKey(ctx,userId,name,revoked)
+	if(err!=nil){
+		return models.MakeAPiKeyResponse{},nil
+	}
+	return models.MakeAPiKeyResponse{
+		Key: res.Key,
+	},nil
 }
