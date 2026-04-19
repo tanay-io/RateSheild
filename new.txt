@@ -93,5 +93,5 @@ Req/Bytes counts sampled once per second.
 60k requests in 5.04s, 11 MB read
  
 ========================================================= 
-✅ LUA TESTS COMPLETE! 
+LUA TESTS COMPLETE! 
 ========================================================= 
