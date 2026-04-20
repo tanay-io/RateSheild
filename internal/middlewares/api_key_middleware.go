@@ -1,10 +1,15 @@
 package middlewares
 
 import (
+	"context"
 	"net/http"
 
-	 "github.com/tanay-io/RateSheild/internal/services/apiKey"
+	auth "github.com/tanay-io/RateSheild/internal/services/apiKey"
 )
+
+type ContextKey string
+
+const UserIDKey ContextKey = "userId"
 
 func APIKeyAuth(authService *auth.Auth) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -15,12 +20,14 @@ func APIKeyAuth(authService *auth.Auth) func(http.Handler) http.Handler {
 				return
 			}
 
-			_, err := authService.ValidateAPIKey(r.Context(), apiKey)
+			user, err := authService.ValidateAPIKey(r.Context(), apiKey)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
 				return
 			}
-			next.ServeHTTP(w, r)
+
+			ctx := context.WithValue(r.Context(), UserIDKey, user.UserID)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }

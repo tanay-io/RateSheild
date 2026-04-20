@@ -6,31 +6,40 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
+	"github.com/tanay-io/RateSheild/internal/middlewares"
 	auth "github.com/tanay-io/RateSheild/internal/services/apiKey"
 )
 
-type MakeAPiKeyRequest struct {
-	UserId uint   `json:"userId"`
-	Name   string `json:"name"`
+func userIDFromCtx(r *http.Request) (uint, bool) {
+	val := r.Context().Value(middlewares.UserIDKey)
+	id, ok := val.(uint)
+	return id, ok
 }
 
+type MakeAPiKeyRequest struct {
+	Name string `json:"name"`
+}
+
+// POST /apikeys
 func CreateApiKey(authService *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := userIDFromCtx(r)
+		if !ok {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		var req MakeAPiKeyRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			w.Header().Set("Content-Type", "application/json")
 			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
-
-		if req.Name == "" || req.UserId == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			http.Error(w, "name and userId are required", http.StatusBadRequest)
+		if req.Name == "" {
+			http.Error(w, "name is required", http.StatusBadRequest)
 			return
 		}
 
-		ctx := r.Context()
-		res, err := authService.CreateApiKey(ctx, req.UserId, req.Name)
+		res, err := authService.CreateApiKey(r.Context(), userID, req.Name)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -42,18 +51,16 @@ func CreateApiKey(authService *auth.Auth) http.HandlerFunc {
 	}
 }
 
-// GET /apikeys/{userId} 
+// GET /apikeys
 func GetAPIKeys(authService *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userIDStr := chi.URLParam(r, "userId")
-		userID, err := strconv.ParseUint(userIDStr, 10, 64)
-		if err != nil || userID == 0 {
-			http.Error(w, "invalid userId", http.StatusBadRequest)
+		userID, ok := userIDFromCtx(r)
+		if !ok {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		ctx := r.Context()
-		res, err := authService.GetAPIKeys(ctx, uint(userID))
+		res, err := authService.GetAPIKeys(r.Context(), userID)
 		if err != nil {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
@@ -64,13 +71,12 @@ func GetAPIKeys(authService *auth.Auth) http.HandlerFunc {
 	}
 }
 
-//DELETE /apikeys/{userId}/{keyId}
+// DELETE /apikeys/{keyId}
 func RevokeAPIKey(authService *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userIDStr := chi.URLParam(r, "userId")
-		userID, err := strconv.ParseUint(userIDStr, 10, 64)
-		if err != nil || userID == 0 {
-			http.Error(w, "invalid userId", http.StatusBadRequest)
+		userID, ok := userIDFromCtx(r)
+		if !ok {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 
@@ -81,8 +87,7 @@ func RevokeAPIKey(authService *auth.Auth) http.HandlerFunc {
 			return
 		}
 
-		ctx := r.Context()
-		if err := authService.RevokeAPIKey(ctx, uint(userID), uint(keyID)); err != nil {
+		if err := authService.RevokeAPIKey(r.Context(), userID, uint(keyID)); err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}

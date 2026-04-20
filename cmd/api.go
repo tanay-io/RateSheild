@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/tanay-io/RateSheild/internal/handlers"
 	"github.com/tanay-io/RateSheild/internal/middlewares"
-	"github.com/tanay-io/RateSheild/internal/services/apiKey"
+	auth "github.com/tanay-io/RateSheild/internal/services/apiKey"
 	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
 	"gorm.io/gorm"
 )
@@ -34,13 +34,11 @@ func (a *API) mount() http.Handler {
 		log.Println("healthy!")
 	})
 
-
-	r.Post("/apikeys", handlers.CreateApiKey(a.Auth))
-	r.Get("/apikeys/{userId}", handlers.GetAPIKeys(a.Auth))
-	r.Delete("/apikeys/{userId}/{keyId}", handlers.RevokeAPIKey(a.Auth))
-
 	r.Group(func(r chi.Router) {
 		r.Use(middlewares.APIKeyAuth(a.Auth))
+		r.Post("/apikeys", handlers.CreateApiKey(a.Auth))
+		r.Get("/apikeys", handlers.GetAPIKeys(a.Auth))
+		r.Delete("/apikeys/{keyId}", handlers.RevokeAPIKey(a.Auth))
 		r.Post("/check", handlers.Check(a.Limiter))
 	})
 
