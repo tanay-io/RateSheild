@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type RateLimitResponse struct {
 	Allowed    bool
 	Limit      int
@@ -8,5 +10,17 @@ type RateLimitResponse struct {
 }
 
 type MakeAPiKeyResponse struct {
-	Key string
+	Key string `json:"key"`
+}
+
+type APIKeyResponse struct {
+	ID        uint      `json:"id"`
+	Name      string    `json:"name"`
+	Prefix    string    `json:"prefix"`
+	Revoked   bool      `json:"revoked"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+type APIKeyListResponse struct {
+	Keys []APIKeyResponse `json:"keys"`
 }

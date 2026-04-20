@@ -19,18 +19,18 @@ import (
 func main() {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
-		Password: "", 
-		DB:       0, 
+		Password: "",
+		DB:       0,
 		Protocol: 2,
 	})
-	//sample url abhi orignal env ke through ayegi 
+	//sample url abhi orignal env ke through ayegi
 	dsn := "postgres://user:pass@localhost:5432/rateshield"
 	dbRepo, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if(err!=nil){
+	if err != nil {
 		log.Fatalf("Could not connect to Database: %v", err)
 	}
-	
-	if err := dbRepo.AutoMigrate(&models.APIKey{},&models.User{}); err != nil {
+
+	if err := dbRepo.AutoMigrate(&models.APIKey{}, &models.User{}); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
@@ -41,27 +41,25 @@ func main() {
 	repo := repository.NewAlgo(rdb)
 	fixedWindow := ratelimiter.NewFixedWindowLimiter(repo)
 	slidingWindow := ratelimiter.NewSlidingWindowService(repo)
-	token_bucket := ratelimiter.NewTokenBucketService(repo)
-	limiterService := ratelimiter.NewRateLimiterService(fixedWindow, slidingWindow ,token_bucket)
+	tokenBucket := ratelimiter.NewTokenBucketService(repo)
+	limiterService := ratelimiter.NewRateLimiterService(fixedWindow, slidingWindow, tokenBucket)
 
-	db:= repository.NewDB(dbRepo)
-	apiKey := app.NewAuth(db)
-	
+	db := repository.NewDB(dbRepo)
+	authService := app.NewAuth(db)
 
 	cfg := Config{
-		Addr:     ":3000",
+		Addr: ":3000",
 	}
-	app := API{
+	server := API{
 		Config:  cfg,
 		Limiter: limiterService,
-		Auth:    apiKey,
-		DB:      dbRepo,
+		Auth:    authService,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	err = app.run(ctx)
+	err = server.run(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
