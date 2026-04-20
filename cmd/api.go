@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/tanay-io/RateSheild/internal/handlers"
 	"github.com/tanay-io/RateSheild/internal/middlewares"
-	"github.com/tanay-io/RateSheild/internal/services/app"
+	"github.com/tanay-io/RateSheild/internal/services/apiKey"
 	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
 	"gorm.io/gorm"
 )
@@ -17,7 +17,7 @@ import (
 type API struct {
 	Config  Config
 	Limiter *ratelimiter.RateLimiterService 
-	Auth    *app.Auth
+	Auth    *auth.Auth
 	DB      *gorm.DB
 }
 

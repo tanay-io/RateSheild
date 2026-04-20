@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/tanay-io/RateSheild/internal/services/app"
+	auth "github.com/tanay-io/RateSheild/internal/services/apiKey"
 )
 
 type MakeAPiKeyRequest struct {
@@ -14,7 +14,7 @@ type MakeAPiKeyRequest struct {
 	Name   string `json:"name"`
 }
 
-func CreateApiKey(authService *app.Auth) http.HandlerFunc {
+func CreateApiKey(authService *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req MakeAPiKeyRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -43,7 +43,7 @@ func CreateApiKey(authService *app.Auth) http.HandlerFunc {
 }
 
 // GET /apikeys/{userId} 
-func GetAPIKeys(authService *app.Auth) http.HandlerFunc {
+func GetAPIKeys(authService *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userIDStr := chi.URLParam(r, "userId")
 		userID, err := strconv.ParseUint(userIDStr, 10, 64)
@@ -65,7 +65,7 @@ func GetAPIKeys(authService *app.Auth) http.HandlerFunc {
 }
 
 //DELETE /apikeys/{userId}/{keyId}
-func RevokeAPIKey(authService *app.Auth) http.HandlerFunc {
+func RevokeAPIKey(authService *auth.Auth) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userIDStr := chi.URLParam(r, "userId")
 		userID, err := strconv.ParseUint(userIDStr, 10, 64)

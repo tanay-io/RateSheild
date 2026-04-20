@@ -3,10 +3,10 @@ package middlewares
 import (
 	"net/http"
 
-	"github.com/tanay-io/RateSheild/internal/services/app"
+	 "github.com/tanay-io/RateSheild/internal/services/apiKey"
 )
 
-func APIKeyAuth(authService *app.Auth) func(http.Handler) http.Handler {
+func APIKeyAuth(authService *auth.Auth) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			apiKey := r.Header.Get("X-API-Key")

@@ -10,7 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/tanay-io/RateSheild/internal/models"
 	"github.com/tanay-io/RateSheild/internal/repository"
-	"github.com/tanay-io/RateSheild/internal/services/app"
+	"github.com/tanay-io/RateSheild/internal/services/apiKey"
 	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -45,7 +45,7 @@ func main() {
 	limiterService := ratelimiter.NewRateLimiterService(fixedWindow, slidingWindow, tokenBucket)
 
 	db := repository.NewDB(dbRepo)
-	authService := app.NewAuth(db)
+	authService := auth.NewAuth(db)
 
 	cfg := Config{
 		Addr: ":3000",
