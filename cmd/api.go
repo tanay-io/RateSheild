@@ -10,15 +10,17 @@ import (
 	"github.com/tanay-io/RateSheild/internal/handlers"
 	"github.com/tanay-io/RateSheild/internal/middlewares"
 	auth "github.com/tanay-io/RateSheild/internal/services/apiKey"
+	userauth "github.com/tanay-io/RateSheild/internal/services/auth"
 	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
 	"gorm.io/gorm"
 )
 
 type API struct {
-	Config  Config
-	Limiter *ratelimiter.RateLimiterService 
-	Auth    *auth.Auth
-	DB      *gorm.DB
+	Config   Config
+	Limiter  *ratelimiter.RateLimiterService
+	Auth     *auth.Auth
+	UserAuth *userauth.Service
+	DB       *gorm.DB
 }
 
 type Config struct {
@@ -34,11 +36,22 @@ func (a *API) mount() http.Handler {
 		log.Println("healthy!")
 	})
 
+	r.Route("/auth", func(r chi.Router) {
+		r.Post("/register", handlers.Register(a.UserAuth))
+		r.Post("/login", handlers.Login(a.UserAuth))
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(middlewares.JWTAuth(a.UserAuth))
+		r.Route("/dashboard", func(r chi.Router) {
+			r.Post("/apikeys", handlers.CreateApiKey(a.Auth))
+			r.Get("/apikeys", handlers.GetAPIKeys(a.Auth))
+			r.Delete("/apikeys/{keyId}", handlers.RevokeAPIKey(a.Auth))
+		})
+	})
+
 	r.Group(func(r chi.Router) {
 		r.Use(middlewares.APIKeyAuth(a.Auth))
-		r.Post("/apikeys", handlers.CreateApiKey(a.Auth))
-		r.Get("/apikeys", handlers.GetAPIKeys(a.Auth))
-		r.Delete("/apikeys/{keyId}", handlers.RevokeAPIKey(a.Auth))
 		r.Post("/check", handlers.Check(a.Limiter))
 	})
 

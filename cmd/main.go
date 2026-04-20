@@ -11,6 +11,7 @@ import (
 	"github.com/tanay-io/RateSheild/internal/models"
 	"github.com/tanay-io/RateSheild/internal/repository"
 	"github.com/tanay-io/RateSheild/internal/services/apiKey"
+	usersvc "github.com/tanay-io/RateSheild/internal/services/auth"
 	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -46,14 +47,16 @@ func main() {
 
 	db := repository.NewDB(dbRepo)
 	authService := auth.NewAuth(db)
+	userAuthService := usersvc.NewService(db, "next123456789")
 
 	cfg := Config{
 		Addr: ":3000",
 	}
 	server := API{
-		Config:  cfg,
-		Limiter: limiterService,
-		Auth:    authService,
+		Config:   cfg,
+		Limiter:  limiterService,
+		Auth:     authService,
+		UserAuth: userAuthService,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
