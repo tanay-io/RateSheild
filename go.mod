@@ -4,6 +4,7 @@ go 1.26.1
 
 require (
 	github.com/go-chi/chi v1.5.5
+	github.com/gorilla/websocket v1.5.3
 	github.com/redis/go-redis/v9 v9.18.0
 	golang.org/x/crypto v0.31.0
 	gorm.io/driver/postgres v1.6.0
