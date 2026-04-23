@@ -33,3 +33,5 @@ docker-compose.yml
 # .vscode/
 
 run_bench.cmd
+openapi.yaml
+PROJECT_FULL_DOCUMENTATION.md

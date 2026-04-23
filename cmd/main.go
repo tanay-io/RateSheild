@@ -43,7 +43,7 @@ func main() {
 	fixedWindow := ratelimiter.NewFixedWindowLimiter(repo)
 	slidingWindow := ratelimiter.NewSlidingWindowService(repo)
 	tokenBucket := ratelimiter.NewTokenBucketService(repo)
-	limiterService := ratelimiter.NewRateLimiterService(fixedWindow, slidingWindow, tokenBucket)
+	limiterService := ratelimiter.NewRateLimiterService(fixedWindow, slidingWindow, tokenBucket, repo)
 
 	db := repository.NewDB(dbRepo)
 	authService := auth.NewAuth(db)

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -236,3 +237,26 @@ func (a *Algo) CheckTokenBucket_via_Lua(ctx context.Context, key string, window 
 	}, nil
 
 }
+
+
+func (a *Algo) PushCheckLog(ctx context.Context, entry models.CheckLogEntry) error {
+	data, err := json.Marshal(entry)
+	if err != nil {
+		return fmt.Errorf("log marshal: %w", err)
+	}
+
+	listKey := fmt.Sprintf("log:user:%d", entry.UserID)
+	pipe := a.rdb.Pipeline()
+	pipe.LPush(ctx, listKey, data)
+	pipe.LTrim(ctx, listKey, 0, 999)
+	pipe.Incr(ctx, "stats:total_requests")
+	if entry.Allowed {
+		pipe.Incr(ctx, "stats:allowed_count")
+	} else {
+		pipe.Incr(ctx, "stats:blocked_count")
+	}
+
+	_, err = pipe.Exec(ctx)
+	return err
+}
+

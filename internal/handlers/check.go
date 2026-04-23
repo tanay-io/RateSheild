@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/tanay-io/RateSheild/internal/middlewares"
 	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
 )
 
@@ -30,8 +31,15 @@ func Check(limiter *ratelimiter.RateLimiterService) http.HandlerFunc {
 
 		ctx := r.Context()
 
+		userID, _ := ctx.Value(middlewares.UserIDKey).(uint)
+
+		ip := r.Header.Get("X-Forwarded-For")
+		if ip == "" {
+			ip = r.RemoteAddr
+		}
+
 		if limiter != nil {
-			res, err := limiter.Allow(ctx, req.Key, req.Window, req.Limit, req.Algo)
+			res, err := limiter.AllowAndLog(ctx, req.Key, req.Window, req.Limit, req.Algo, ip, userID)
 			if err != nil {
 				http.Error(w, "internal service error", http.StatusInternalServerError)
 				return
