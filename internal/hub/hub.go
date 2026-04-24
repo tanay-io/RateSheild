@@ -13,7 +13,7 @@ type Client struct {
 
 type Hub struct {
     clients map[uint]map[*Client]bool
-    
+    //ye lock vghera krne ke lie hai kyunki go routines me jrurat hoti hai 
     mu          sync.RWMutex
     Register    chan *Client
     Unregister  chan *Client
