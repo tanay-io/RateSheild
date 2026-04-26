@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/joho/godotenv"
@@ -37,7 +38,7 @@ func getEnv(key, fallback string) string {
 
 func main() {
 
-	//ye sirf local ke lie hai 
+	//ye sirf local ke lie hai
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, reading from environment")
 	}
@@ -82,7 +83,8 @@ func main() {
 
 	// HTTP server
 	cfg := Config{
-		Addr: getEnv("PORT", ":3000"),
+		Addr:             getEnv("PORT", ":3000"),
+		WSAllowedOrigins: splitCSV(getEnv("WS_ALLOWED_ORIGINS", "")),
 	}
 	server := API{
 		Config:    cfg,
@@ -102,3 +104,18 @@ func main() {
 	}
 }
 
+func splitCSV(value string) []string {
+	if value == "" {
+		return nil
+	}
+
+	parts := strings.Split(value, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}

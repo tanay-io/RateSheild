@@ -29,7 +29,8 @@ type API struct {
 }
 
 type Config struct {
-	Addr string
+	Addr             string
+	WSAllowedOrigins []string
 }
 
 func (a *API) mount() http.Handler {
@@ -47,27 +48,27 @@ func (a *API) mount() http.Handler {
 	})
 
 	r.Group(func(r chi.Router) {
-			r.Use(middlewares.JWTAuth(a.UserAuth))
-			r.Route("/dashboard", func(r chi.Router) {
-				// API keys
-				r.Post("/apikeys", handlers.CreateApiKey(a.Auth))
-				r.Get("/apikeys", handlers.GetAPIKeys(a.Auth))
-				r.Delete("/apikeys/{keyId}", handlers.RevokeAPIKey(a.Auth))
+		r.Use(middlewares.JWTAuth(a.UserAuth))
+		r.Route("/dashboard", func(r chi.Router) {
+			// API keys
+			r.Post("/apikeys", handlers.CreateApiKey(a.Auth))
+			r.Get("/apikeys", handlers.GetAPIKeys(a.Auth))
+			r.Delete("/apikeys/{keyId}", handlers.RevokeAPIKey(a.Auth))
 
-				// Stats and logs
-				r.Get("/stats", handlers.GetStats(a.RedisRepo, a.DBRepo))
-				r.Get("/logs", handlers.GetLogs(a.RedisRepo))
+			// Stats and logs
+			r.Get("/stats", handlers.GetStats(a.RedisRepo, a.DBRepo))
+			r.Get("/logs", handlers.GetLogs(a.RedisRepo))
 
-				// Rules CRUD
-				r.Get("/rules", handlers.ListRules(a.DBRepo))
-				r.Post("/rules", handlers.CreateRule(a.DBRepo))
-				r.Put("/rules/{ruleId}", handlers.UpdateRule(a.DBRepo))
-				r.Delete("/rules/{ruleId}", handlers.DeleteRule(a.DBRepo))
+			// Rules CRUD
+			r.Get("/rules", handlers.ListRules(a.DBRepo))
+			r.Post("/rules", handlers.CreateRule(a.DBRepo))
+			r.Put("/rules/{ruleId}", handlers.UpdateRule(a.DBRepo))
+			r.Delete("/rules/{ruleId}", handlers.DeleteRule(a.DBRepo))
 
-				// WebSocket live feed
-				r.Get("/live", handlers.LiveHandler(a.Hub))
-			})
+			// WebSocket live feed
+			r.Get("/live", handlers.LiveHandler(a.Hub, a.Config.WSAllowedOrigins))
 		})
+	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(middlewares.APIKeyAuth(a.Auth))

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/tanay-io/RateSheild/internal/middlewares"
 	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
@@ -29,6 +30,13 @@ func Check(limiter *ratelimiter.RateLimiterService) http.HandlerFunc {
 			return
 		}
 
+		algo := strings.TrimSpace(req.Algo)
+		if algo == "" {
+			algo = "fixed"
+		}
+
+		windowMs := req.Window * 1000
+
 		ctx := r.Context()
 
 		userID, _ := ctx.Value(middlewares.UserIDKey).(uint)
@@ -39,7 +47,7 @@ func Check(limiter *ratelimiter.RateLimiterService) http.HandlerFunc {
 		}
 
 		if limiter != nil {
-			res, err := limiter.AllowAndLog(ctx, req.Key, req.Window, req.Limit, req.Algo, ip, userID)
+			res, err := limiter.AllowAndLog(ctx, req.Key, windowMs, req.Limit, algo, ip, userID)
 			if err != nil {
 				http.Error(w, "internal service error", http.StatusInternalServerError)
 				return
@@ -49,7 +57,7 @@ func Check(limiter *ratelimiter.RateLimiterService) http.HandlerFunc {
 				return
 			}
 		}
-		
+
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	}
