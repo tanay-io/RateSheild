@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #fafafa;
+  --panel: #ffffff;
+  --muted-panel: #f4f4f5;
+  --border: #e4e4e7;
+  --foreground: #18181b;
+  --secondary: #71717a;
+  --tertiary: #a1a1aa;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --panel: #111111;
+  --muted-panel: #151515;
+  --border: #27272a;
+  --foreground: #fafafa;
+  --secondary: #a1a1aa;
+  --tertiary: #71717a;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+::selection {
+  background: #18181b;
+  color: #fafafa;
+}
+
+.dark ::selection {
+  background: #fafafa;
+  color: #111111;
+}
