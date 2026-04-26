@@ -60,7 +60,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not connect to Database: %v", err)
 	}
-	if err := dbRepo.AutoMigrate(&models.APIKey{}, &models.User{}); err != nil {
+	if err := dbRepo.AutoMigrate(&models.User{}, &models.APIKey{}, &models.Rule{}); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
 
@@ -85,11 +85,13 @@ func main() {
 		Addr: getEnv("PORT", ":3000"),
 	}
 	server := API{
-		Config:   cfg,
-		Limiter:  limiterService,
-		Auth:     authService,
-		UserAuth: userAuthService,
-		Hub:      wsHub,
+		Config:    cfg,
+		Limiter:   limiterService,
+		Auth:      authService,
+		UserAuth:  userAuthService,
+		Hub:       wsHub,
+		RedisRepo: repo,
+		DBRepo:    db,
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

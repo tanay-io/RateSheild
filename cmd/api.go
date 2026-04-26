@@ -10,6 +10,7 @@ import (
 	"github.com/tanay-io/RateSheild/internal/handlers"
 	"github.com/tanay-io/RateSheild/internal/hub"
 	"github.com/tanay-io/RateSheild/internal/middlewares"
+	"github.com/tanay-io/RateSheild/internal/repository"
 	auth "github.com/tanay-io/RateSheild/internal/services/apiKey"
 	userauth "github.com/tanay-io/RateSheild/internal/services/auth"
 	"github.com/tanay-io/RateSheild/internal/services/ratelimiter"
@@ -17,12 +18,14 @@ import (
 )
 
 type API struct {
-	Config   Config
-	Limiter  *ratelimiter.RateLimiterService
-	Auth     *auth.Auth
-	UserAuth *userauth.Service
-	DB       *gorm.DB
-	Hub      *hub.Hub
+	Config    Config
+	Limiter   *ratelimiter.RateLimiterService
+	Auth      *auth.Auth
+	UserAuth  *userauth.Service
+	DB        *gorm.DB
+	Hub       *hub.Hub
+	RedisRepo *repository.Algo
+	DBRepo    *repository.Database
 }
 
 type Config struct {
@@ -44,16 +47,27 @@ func (a *API) mount() http.Handler {
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Use(middlewares.JWTAuth(a.UserAuth))
-		r.Route("/dashboard", func(r chi.Router) {
-			r.Post("/apikeys", handlers.CreateApiKey(a.Auth))
-			r.Get("/apikeys", handlers.GetAPIKeys(a.Auth))
-			r.Delete("/apikeys/{keyId}", handlers.RevokeAPIKey(a.Auth))
+			r.Use(middlewares.JWTAuth(a.UserAuth))
+			r.Route("/dashboard", func(r chi.Router) {
+				// API keys
+				r.Post("/apikeys", handlers.CreateApiKey(a.Auth))
+				r.Get("/apikeys", handlers.GetAPIKeys(a.Auth))
+				r.Delete("/apikeys/{keyId}", handlers.RevokeAPIKey(a.Auth))
 
-			r.Get("/live", handlers.LiveHandler(a.Hub))
+				// Stats and logs
+				r.Get("/stats", handlers.GetStats(a.RedisRepo, a.DBRepo))
+				r.Get("/logs", handlers.GetLogs(a.RedisRepo))
 
+				// Rules CRUD
+				r.Get("/rules", handlers.ListRules(a.DBRepo))
+				r.Post("/rules", handlers.CreateRule(a.DBRepo))
+				r.Put("/rules/{ruleId}", handlers.UpdateRule(a.DBRepo))
+				r.Delete("/rules/{ruleId}", handlers.DeleteRule(a.DBRepo))
+
+				// WebSocket live feed
+				r.Get("/live", handlers.LiveHandler(a.Hub))
+			})
 		})
-	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(middlewares.APIKeyAuth(a.Auth))

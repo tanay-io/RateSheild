@@ -11,6 +11,10 @@ import (
 	"github.com/tanay-io/RateSheild/internal/models"
 )
 
+func statsKey(userID uint, suffix string) string {
+	return fmt.Sprintf("stats:user:%d:%s", userID, suffix)
+}
+
 type Algo struct {
 	rdb *redis.Client
 }
@@ -249,11 +253,15 @@ func (a *Algo) PushCheckLog(ctx context.Context, entry models.CheckLogEntry) err
 	pipe := a.rdb.Pipeline()
 	pipe.LPush(ctx, listKey, data)
 	pipe.LTrim(ctx, listKey, 0, 999)
+
 	pipe.Incr(ctx, "stats:total_requests")
+	pipe.Incr(ctx, statsKey(entry.UserID, "total"))
 	if entry.Allowed {
 		pipe.Incr(ctx, "stats:allowed_count")
+		pipe.Incr(ctx, statsKey(entry.UserID, "allowed"))
 	} else {
 		pipe.Incr(ctx, "stats:blocked_count")
+		pipe.Incr(ctx, statsKey(entry.UserID, "blocked"))
 	}
 
 	if _, err = pipe.Exec(ctx); err != nil {
@@ -270,6 +278,53 @@ func (a *Algo) PushCheckLog(ctx context.Context, entry models.CheckLogEntry) err
 	}
 
 	channel := fmt.Sprintf("events:user:%d", entry.UserID)
-	return a.rdb.Publish(ctx,channel ,env).Err()
+	return a.rdb.Publish(ctx, channel, env).Err()
 }
 
+func (a *Algo) GetStats(ctx context.Context, userID uint, activeKeys int64) (models.StatsResponse, error) {
+	keys := []string{
+		statsKey(userID, "total"),
+		statsKey(userID, "allowed"),
+		statsKey(userID, "blocked"),
+	}
+	vals, err := a.rdb.MGet(ctx, keys...).Result()
+	if err != nil {
+		return models.StatsResponse{}, fmt.Errorf("redis mget stats: %w", err)
+	}
+
+	parseStat := func(v interface{}) int64 {
+		if v == nil {
+			return 0
+		}
+		n, _ := strconv.ParseInt(v.(string), 10, 64)
+		return n
+	}
+
+	return models.StatsResponse{
+		TotalRequests: parseStat(vals[0]),
+		AllowedCount:  parseStat(vals[1]),
+		BlockedCount:  parseStat(vals[2]),
+		ActiveKeys:    activeKeys,
+	}, nil
+}
+
+func (a *Algo) GetLogs(ctx context.Context, userID uint, limit int) ([]models.CheckLogEntry, error) {
+	if limit <= 0 || limit > 1000 {
+		limit = 50
+	}
+	listKey := fmt.Sprintf("log:user:%d", userID)
+	raws, err := a.rdb.LRange(ctx, listKey, 0, int64(limit-1)).Result()
+	if err != nil {
+		return nil, fmt.Errorf("redis lrange logs: %w", err)
+	}
+
+	entries := make([]models.CheckLogEntry, 0, len(raws))
+	for _, raw := range raws {
+		var e models.CheckLogEntry
+		if err := json.Unmarshal([]byte(raw), &e); err != nil {
+			continue
+		}
+		entries = append(entries, e)
+	}
+	return entries, nil
+}
