@@ -63,8 +63,9 @@ func (s *RateLimiterService) AllowAndLog(
 		Timestamp: time.Now().UTC(),
 		UserID:    userID,
 	}
-
+	
 	go func() {
+		
 		if logErr := s.repo.PushCheckLog(context.Background(), entry); logErr != nil {
 			fmt.Printf("check log error: %v\n", logErr)
 		}

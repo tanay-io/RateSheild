@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/tanay-io/RateSheild/internal/handlers"
+	"github.com/tanay-io/RateSheild/internal/hub"
 	"github.com/tanay-io/RateSheild/internal/middlewares"
 	auth "github.com/tanay-io/RateSheild/internal/services/apiKey"
 	userauth "github.com/tanay-io/RateSheild/internal/services/auth"
@@ -21,6 +22,7 @@ type API struct {
 	Auth     *auth.Auth
 	UserAuth *userauth.Service
 	DB       *gorm.DB
+	Hub      *hub.Hub
 }
 
 type Config struct {
@@ -47,6 +49,9 @@ func (a *API) mount() http.Handler {
 			r.Post("/apikeys", handlers.CreateApiKey(a.Auth))
 			r.Get("/apikeys", handlers.GetAPIKeys(a.Auth))
 			r.Delete("/apikeys/{keyId}", handlers.RevokeAPIKey(a.Auth))
+
+			r.Get("/live", handlers.LiveHandler(a.Hub))
+
 		})
 	})
 

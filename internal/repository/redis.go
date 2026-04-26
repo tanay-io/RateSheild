@@ -256,7 +256,20 @@ func (a *Algo) PushCheckLog(ctx context.Context, entry models.CheckLogEntry) err
 		pipe.Incr(ctx, "stats:blocked_count")
 	}
 
-	_, err = pipe.Exec(ctx)
-	return err
+	if _, err = pipe.Exec(ctx); err != nil {
+		return err
+	}
+
+	type envelope struct {
+		UserID  uint            `json:"userId"`
+		Payload json.RawMessage `json:"payload"`
+	}
+	env, err := json.Marshal(envelope{UserID: entry.UserID, Payload: data})
+	if err != nil {
+		return fmt.Errorf("event envelope marshal: %w", err)
+	}
+
+	channel := fmt.Sprintf("events:user:%d", entry.UserID)
+	return a.rdb.Publish(ctx,channel ,env).Err()
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/tanay-io/RateSheild/internal/hub"
+	"github.com/tanay-io/RateSheild/internal/middlewares"
 )
 var upgrader = websocket.Upgrader{
     ReadBufferSize:  1024,
@@ -16,7 +17,7 @@ var upgrader = websocket.Upgrader{
 }
 func LiveHandler(h *hub.Hub) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
-        userID := r.Context().Value("userID").(uint)
+        userID := r.Context().Value(middlewares.UserIDKey).(uint)
 
         conn, err := upgrader.Upgrade(w, r, nil)
         if err != nil {

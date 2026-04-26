@@ -49,7 +49,7 @@ func Check(limiter *ratelimiter.RateLimiterService) http.HandlerFunc {
 				return
 			}
 		}
-
+		
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	}
