@@ -44,3 +44,5 @@ PROJECT_FULL_DOCUMENTATION.md
 cmd.exe
 frontend/node_modules
 frontend/.next
+
+docs
