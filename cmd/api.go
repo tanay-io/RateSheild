@@ -40,7 +40,7 @@ func (a *API) mount() http.Handler {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:*", "http://127.0.0.1:*"}, // allow any localhost port
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-API-Key"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,
