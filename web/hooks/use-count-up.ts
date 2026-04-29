@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useCountUp(value: number, duration = 400) {
   const [display, setDisplay] = useState(value);
+  const displayRef = useRef(value);
 
   useEffect(() => {
-    const start = display;
+    const start = displayRef.current;
     const delta = value - start;
     if (delta === 0) return;
     let frame = 0;
@@ -17,13 +18,15 @@ export function useCountUp(value: number, duration = 400) {
       frame += 1;
       const progress = Math.min(frame / totalFrames, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(start + delta * eased));
+      const next = Math.round(start + delta * eased);
+      displayRef.current = next;
+      setDisplay(next);
       if (progress < 1) raf = requestAnimationFrame(tick);
     };
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [value]);
+  }, [duration, value]);
 
   return display;
 }

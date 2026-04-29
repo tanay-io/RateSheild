@@ -5,11 +5,19 @@ import { API_URL, api } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import type { CheckLogEntry, StatsResponse } from "@/lib/types";
 
-export function useLiveFeed() {
+export type RequestVolumePoint = { time: string; allowed: number; blocked: number };
+export type LiveFeedState = {
+  connected: boolean;
+  stats: StatsResponse;
+  events: CheckLogEntry[];
+  chart: RequestVolumePoint[];
+};
+
+export function useLiveFeed(): LiveFeedState {
   const [connected, setConnected] = useState(false);
   const [stats, setStats] = useState<StatsResponse>({ total_requests: 0, allowed_count: 0, blocked_count: 0, active_keys: 0 });
   const [events, setEvents] = useState<CheckLogEntry[]>([]);
-  const [chart, setChart] = useState(() => seedChart());
+  const [chart, setChart] = useState<RequestVolumePoint[]>([]);
 
   useEffect(() => {
     let disposed = false;
@@ -22,7 +30,11 @@ export function useLiveFeed() {
           setChart(buildChartFromLogs(logs));
         }
       } catch {
-        if (!disposed) setChart(seedChart());
+        if (!disposed) {
+          setStats({ total_requests: 0, allowed_count: 0, blocked_count: 0, active_keys: 0 });
+          setEvents([]);
+          setChart([]);
+        }
       }
     };
     load();
@@ -35,58 +47,85 @@ export function useLiveFeed() {
     const token = getToken();
     if (!token) return;
 
-    const wsUrl = `${API_URL.replace(/^http/, "ws")}/dashboard/live?token=${encodeURIComponent(token)}`;
-    const socket = new WebSocket(wsUrl);
-    socket.onopen = () => setConnected(true);
-    socket.onclose = () => setConnected(false);
-    socket.onerror = () => setConnected(false);
-    socket.onmessage = (message) => {
-      try {
-        const event = JSON.parse(message.data) as CheckLogEntry;
-        setEvents((items) => [event, ...items].slice(0, 50));
-        setStats((current) => ({
-          total_requests: current.total_requests + 1,
-          allowed_count: current.allowed_count + (event.allowed ? 1 : 0),
-          blocked_count: current.blocked_count + (event.allowed ? 0 : 1),
-          active_keys: current.active_keys
-        }));
-        setChart((items) => appendChart(items, event));
-      } catch {
-        // Ignore malformed websocket payloads.
-      }
+    let socket: WebSocket | null = null;
+    let reconnectTimer = 0;
+    let disposed = false;
+    let reconnectDelay = 1500;
+
+    const connect = () => {
+      socket = new WebSocket(`${API_URL.replace(/^http/, "ws")}/dashboard/live?token=${encodeURIComponent(token)}`);
+      socket.onopen = () => {
+        reconnectDelay = 1500;
+        setConnected(true);
+      };
+      socket.onclose = () => {
+        setConnected(false);
+        if (!disposed) {
+          reconnectTimer = window.setTimeout(connect, reconnectDelay);
+          reconnectDelay = Math.min(reconnectDelay * 1.6, 10000);
+        }
+      };
+      socket.onerror = () => setConnected(false);
+      socket.onmessage = (message) => {
+        try {
+          const event = JSON.parse(message.data) as CheckLogEntry;
+          setEvents((items) => [event, ...items].slice(0, 50));
+          setStats((current) => ({
+            total_requests: current.total_requests + 1,
+            allowed_count: current.allowed_count + (event.allowed ? 1 : 0),
+            blocked_count: current.blocked_count + (event.allowed ? 0 : 1),
+            active_keys: current.active_keys
+          }));
+          setChart((items) => appendChart(items, event));
+        } catch {
+          // Ignore malformed websocket payloads.
+        }
+      };
     };
 
-    return () => socket.close();
+    connect();
+
+    return () => {
+      disposed = true;
+      window.clearTimeout(reconnectTimer);
+      socket?.close();
+    };
   }, []);
 
   return useMemo(() => ({ connected, stats, events, chart }), [connected, stats, events, chart]);
 }
 
-function seedChart() {
-  return Array.from({ length: 18 }, (_, i) => ({
-    time: `${String((new Date().getHours() + i) % 24).padStart(2, "0")}:00`,
-    allowed: Math.floor(120 + Math.random() * 240),
-    blocked: Math.floor(10 + Math.random() * 70)
-  }));
-}
-
 function buildChartFromLogs(logs: CheckLogEntry[]) {
-  if (logs.length === 0) return seedChart();
-  const recent = logs.slice(0, 18).reverse();
-  return recent.map((entry) => ({
-    time: new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    allowed: entry.allowed ? 1 : 0,
-    blocked: entry.allowed ? 0 : 1
-  }));
+  const buckets = new Map<string, RequestVolumePoint>();
+  logs
+    .slice()
+    .reverse()
+    .forEach((entry) => {
+      const time = minuteLabel(entry.timestamp);
+      const current = buckets.get(time) ?? { time, allowed: 0, blocked: 0 };
+      if (entry.allowed) current.allowed += 1;
+      else current.blocked += 1;
+      buckets.set(time, current);
+    });
+  return Array.from(buckets.values()).slice(-18);
 }
 
-function appendChart(items: ReturnType<typeof seedChart>, event: CheckLogEntry) {
-  return [
-    ...items.slice(-17),
-    {
-      time: new Date(event.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      allowed: event.allowed ? 1 : 0,
-      blocked: event.allowed ? 0 : 1
-    }
-  ];
+function appendChart(items: RequestVolumePoint[], event: CheckLogEntry) {
+  const time = minuteLabel(event.timestamp);
+  const last = items[items.length - 1];
+  if (last?.time === time) {
+    return [
+      ...items.slice(0, -1),
+      {
+        ...last,
+        allowed: last.allowed + (event.allowed ? 1 : 0),
+        blocked: last.blocked + (event.allowed ? 0 : 1)
+      }
+    ];
+  }
+  return [...items.slice(-17), { time, allowed: event.allowed ? 1 : 0, blocked: event.allowed ? 0 : 1 }];
+}
+
+function minuteLabel(timestamp: string) {
+  return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }

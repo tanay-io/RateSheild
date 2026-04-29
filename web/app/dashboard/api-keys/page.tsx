@@ -1,7 +1,7 @@
 "use client";
 
 import { Copy, Plus } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/button";
 import { StatusBadge } from "@/components/badge";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -17,14 +17,24 @@ export default function ApiKeysPage() {
   const [creating, setCreating] = useState(false);
   const [confirming, setConfirming] = useState<number | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const response = await api.keys();
     setKeys(response.keys ?? []);
-  };
+  }, []);
 
   useEffect(() => {
-    load().catch((err) => toast.push({ type: "error", title: "Could not load API keys", detail: err.message }));
-  }, []);
+    let cancelled = false;
+    api.keys()
+      .then((response) => {
+        if (!cancelled) setKeys(response.keys ?? []);
+      })
+      .catch((err) => {
+        if (!cancelled) toast.push({ type: "error", title: "Could not load API keys", detail: err.message });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [toast]);
 
   const create = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

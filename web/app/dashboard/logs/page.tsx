@@ -1,35 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AlgorithmBadge, StatusBadge } from "@/components/badge";
 import { EmptyState } from "@/components/dashboard/empty-state";
-import { useToast } from "@/components/toast";
-import { api } from "@/lib/api";
-import type { CheckLogEntry } from "@/lib/types";
+import { useLiveFeedContext } from "@/components/dashboard/live-feed-provider";
 import { formatRelativeTime } from "@/lib/utils";
 
 export default function LogsPage() {
-  const toast = useToast();
-  const [logs, setLogs] = useState<CheckLogEntry[]>([]);
+  const { events } = useLiveFeedContext();
   const [algo, setAlgo] = useState("all");
   const [status, setStatus] = useState("all");
   const [query, setQuery] = useState("");
 
-  useEffect(() => {
-    api.logs(200)
-      .then(setLogs)
-      .catch((err) => toast.push({ type: "error", title: "Could not load logs", detail: err.message }));
-  }, []);
-
   const filtered = useMemo(() => {
-    return logs.filter((log) => {
+    return events.slice(0, 200).filter((log) => {
       const statusOk = status === "all" || (status === "allowed" ? log.allowed : !log.allowed);
       const algoOk = algo === "all" || log.algo === algo;
       const q = query.toLowerCase();
       const queryOk = !q || log.key.toLowerCase().includes(q) || log.ip.toLowerCase().includes(q);
       return statusOk && algoOk && queryOk;
     });
-  }, [logs, status, algo, query]);
+  }, [events, status, algo, query]);
 
   return (
     <div className="space-y-4">
@@ -68,7 +59,7 @@ export default function LogsPage() {
               <div><AlgorithmBadge algo={log.algo} /></div>
               <div className="font-mono text-xs text-white/50">{log.ip}</div>
               <div><StatusBadge allowed={log.allowed} /></div>
-              <div className="font-mono text-xs text-white/40">{(1 + (index % 8) * 0.51).toFixed(2)}ms</div>
+              <div className="font-mono text-xs text-white/40">--</div>
             </div>
           ))}
         </div>

@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, FileText, Key, LogOut, Menu, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ShieldLogo } from "@/components/shield-logo";
 import { clearSession, getToken, getUser } from "@/lib/auth";
+import type { User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ToastProvider } from "@/components/toast";
+import { LiveFeedProvider, useLiveFeedContext } from "@/components/dashboard/live-feed-provider";
 
 const navGroups = [
   { label: "OVERVIEW", items: [{ href: "/dashboard", icon: BarChart3, label: "Overview" }] },
@@ -29,14 +31,31 @@ const pageTitles: Record<string, string> = {
 };
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
+  return (
+    <ToastProvider>
+      <LiveFeedProvider>
+        <DashboardFrame>{children}</DashboardFrame>
+      </LiveFeedProvider>
+    </ToastProvider>
+  );
+}
+
+function DashboardFrame({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const user = useMemo(() => getUser(), [pathname]);
+  const [user, setUser] = useState<User | null>(null);
+  const { connected } = useLiveFeedContext();
   const title = pageTitles[pathname] ?? "Dashboard";
 
   useEffect(() => {
-    if (!getToken()) router.replace("/login");
+    const token = getToken();
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+    const timer = window.setTimeout(() => setUser(getUser()), 0);
+    return () => window.clearTimeout(timer);
   }, [router]);
 
   const logout = () => {
@@ -45,8 +64,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ToastProvider>
-      <div className="min-h-screen bg-page text-white">
+    <div className="min-h-screen bg-page text-white">
         <button aria-label="Open navigation" onClick={() => setOpen(true)} className="fixed left-4 top-3 z-50 md:hidden">
           <Menu className="h-5 w-5" />
         </button>
@@ -83,9 +101,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="border-t border-white/[0.06] px-4 pt-4">
             <div className="flex items-center gap-2">
               <div className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-[11px] font-medium">
-                {(user?.name ?? user?.email ?? "A").slice(0, 2).toUpperCase()}
+                {getInitials(user)}
               </div>
-              <div className="min-w-0 truncate text-xs text-white/50">{user?.email ?? "admin@rateshield.dev"}</div>
+              <div className="min-w-0 truncate text-xs text-white/50">{user?.email ?? "..."}</div>
             </div>
             <button onClick={logout} className="mt-2 flex items-center gap-2 text-[13px] text-white/40 transition hover:text-red">
               <LogOut className="h-3.5 w-3.5" /> Logout
@@ -96,17 +114,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <header className="sticky top-0 z-30 flex h-12 items-center justify-between border-b border-white/[0.06] bg-sidebar px-6">
             <div className="pl-8 text-sm font-medium md:pl-0">{title}</div>
             <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-2 rounded-full border border-green/20 bg-green/10 px-2.5 py-1 text-xs font-medium text-green">
-                <span className="h-1.5 w-1.5 animate-pulseDot rounded-full bg-green" /> Live
+              <span className={connected ? "inline-flex items-center gap-2 rounded-full border border-green/20 bg-green/10 px-2.5 py-1 text-xs font-medium text-green" : "inline-flex items-center gap-2 rounded-full border border-amber/20 bg-amber/10 px-2.5 py-1 text-xs font-medium text-amber"}>
+                <span className={connected ? "h-1.5 w-1.5 animate-pulseDot rounded-full bg-green" : "h-1.5 w-1.5 animate-pulseDot rounded-full bg-amber"} /> {connected ? "Live" : "Reconnecting"}
               </span>
               <div className="hidden h-7 w-7 place-items-center rounded-full bg-white/10 text-[11px] font-medium sm:grid">
-                {(user?.name ?? "RS").slice(0, 2).toUpperCase()}
+                {getInitials(user)}
               </div>
             </div>
           </header>
           <main className="p-4 md:p-6">{children}</main>
         </div>
-      </div>
-    </ToastProvider>
+    </div>
   );
+}
+
+function getInitials(user: User | null) {
+  return (user?.name ?? user?.email ?? "..").slice(0, 2).toUpperCase();
 }

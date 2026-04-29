@@ -16,10 +16,19 @@ export default function RulesPage() {
   const [selected, setSelected] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const load = async () => setRules(await api.rules());
   useEffect(() => {
-    load().catch((err) => toast.push({ type: "error", title: "Could not load rules", detail: err.message }));
-  }, []);
+    let cancelled = false;
+    api.rules()
+      .then((items) => {
+        if (!cancelled) setRules(items);
+      })
+      .catch((err) => {
+        if (!cancelled) toast.push({ type: "error", title: "Could not load rules", detail: err.message });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [toast]);
 
   const create = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -3,10 +3,10 @@
 import { LiveEvents } from "@/components/dashboard/live-events";
 import { RequestChart } from "@/components/dashboard/request-chart";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { useLiveFeed } from "@/hooks/use-live-feed";
+import { useLiveFeedContext } from "@/components/dashboard/live-feed-provider";
 
 export default function DashboardPage() {
-  const { stats, events, chart } = useLiveFeed();
+  const { stats, events, chart } = useLiveFeedContext();
   const allowedPct = stats.total_requests ? ((stats.allowed_count / stats.total_requests) * 100).toFixed(1) : "0.0";
   const blockedPct = stats.total_requests ? ((stats.blocked_count / stats.total_requests) * 100).toFixed(1) : "0.0";
 

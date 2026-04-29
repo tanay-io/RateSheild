@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -78,7 +79,23 @@ func originAllowed(r *http.Request, allowed map[string]struct{}) bool {
 		return false
 	}
 
-	return strings.EqualFold(parsed.Host, r.Host)
+	if strings.EqualFold(parsed.Host, r.Host) {
+		return true
+	}
+
+	return isLocalhost(parsed.Hostname()) && isLocalhost(hostnameOnly(r.Host))
+}
+
+func hostnameOnly(hostport string) string {
+	host, _, err := net.SplitHostPort(hostport)
+	if err == nil {
+		return host
+	}
+	return hostport
+}
+
+func isLocalhost(host string) bool {
+	return strings.EqualFold(host, "localhost") || host == "127.0.0.1" || host == "::1"
 }
 
 func writePump(client *hub.Client, h *hub.Hub) {

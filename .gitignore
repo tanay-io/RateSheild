@@ -44,6 +44,10 @@ PROJECT_FULL_DOCUMENTATION.md
 cmd.exe
 frontend/node_modules
 frontend/.next
+web/node_modules
+web/.next
+web/tsconfig.tsbuildinfo
+.gocache
 
 docs
 antigravity-awesome-skills
