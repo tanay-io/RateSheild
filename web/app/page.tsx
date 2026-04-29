@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Github, Gauge, Globe2, Radio } from "lucide-react";
 import { motion } from "framer-motion";
