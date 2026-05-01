@@ -48,6 +48,6 @@ web/node_modules
 web/.next
 web/tsconfig.tsbuildinfo
 .gocache
-
+.venv
 docs
 antigravity-awesome-skills

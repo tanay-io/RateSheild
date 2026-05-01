@@ -44,13 +44,24 @@ func main() {
 	}
 
 	// Redis
-	redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     mustEnv("REDIS_ADDR"),
-		Password: getEnv("REDIS_PASSWORD", ""),
-		DB:       redisDB,
-		Protocol: 2,
-	})
+	redisURL := os.Getenv("REDIS_URL")
+	var rdb *redis.Client
+	if redisURL != "" {
+		opts, err := redis.ParseURL(redisURL)
+		if err != nil {
+			log.Fatalf("invalid REDIS_URL: %v", err)
+		}
+		opts.Protocol = 2
+		rdb = redis.NewClient(opts)
+	} else {
+		redisDB, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
+		rdb = redis.NewClient(&redis.Options{
+			Addr:     mustEnv("REDIS_ADDR"),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       redisDB,
+			Protocol: 2,
+		})
+	}
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		log.Fatalf("Could not connect to Redis: %v", err)
 	}
