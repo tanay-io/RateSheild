@@ -1,7 +1,7 @@
 import { getToken } from "@/lib/auth";
 import type { ApiKey, AuthResponse, CheckLogEntry, Rule, StatsResponse } from "@/lib/types";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://ratesheild.onrender.com/";
 
 type ApiError = Error & { status?: number };
 
