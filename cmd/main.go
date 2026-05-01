@@ -93,8 +93,12 @@ func main() {
 	go wsHub.StartGlobalSubscriber(rdb)
 
 	// HTTP server
+	port := getEnv("PORT", "3000")
+	if !strings.Contains(port, ":") {
+		port = ":" + port
+	}
 	cfg := Config{
-		Addr:             getEnv("PORT", ":3000"),
+		Addr:             port,
 		WSAllowedOrigins: splitCSV(getEnv("WS_ALLOWED_ORIGINS", "")),
 	}
 	server := API{
