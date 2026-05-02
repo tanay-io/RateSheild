@@ -17,7 +17,7 @@ import * as Errors from './core/error';
 import * as Uploads from './core/uploads';
 import * as API from './resources/index';
 import { APIPromise } from './core/api-promise';
-import { Auth, AuthLoginParams, AuthRegisterParams, AuthResponse } from './resources/auth';
+import { Auth, AuthLoginParams, AuthRegisterParams, AuthResponse, UserDto } from './resources/auth';
 import { Check, CheckEnforceRateLimitParams, CheckEnforceRateLimitResponse } from './resources/check';
 import { Health, HealthCheckResponse } from './resources/health';
 import {
@@ -802,6 +802,7 @@ export declare namespace Ratesheild {
   export {
     Auth as Auth,
     type AuthResponse as AuthResponse,
+    type UserDto as UserDto,
     type AuthLoginParams as AuthLoginParams,
     type AuthRegisterParams as AuthRegisterParams,
   };

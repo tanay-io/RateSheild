@@ -13,6 +13,7 @@ Methods:
 Types:
 
 - <code><a href="./src/resources/auth.ts">AuthResponse</a></code>
+- <code><a href="./src/resources/auth.ts">UserDto</a></code>
 
 Methods:
 
