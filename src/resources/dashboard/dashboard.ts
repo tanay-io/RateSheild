@@ -3,20 +3,23 @@
 import { APIResource } from '../../core/resource';
 import * as ApikeysAPI from './apikeys';
 import {
+  APIKeyListResponse,
+  APIKeyObject,
   ApikeyCreateParams,
-  ApikeyCreateResponse,
-  ApikeyListResponse,
-  ApikeyRevokeResponse,
   Apikeys,
+  CreateAPIKeyResponse,
+  RevokeAPIKeyResponse,
 } from './apikeys';
 import * as RulesAPI from './rules';
 import {
+  CreateRuleRequest,
+  DeleteRuleResponse,
   RuleCreateParams,
-  RuleDeleteResponse,
   RuleListResponse,
   RuleObject,
   RuleUpdateParams,
   Rules,
+  UpdateRuleRequest,
 } from './rules';
 import { APIPromise } from '../../core/api-promise';
 import { buildHeaders } from '../../internal/headers';
@@ -36,14 +39,14 @@ export class Dashboard extends APIResource {
    *
    * @example
    * ```ts
-   * const response = await client.dashboard.getLogs();
+   * const checkLogEntries = await client.dashboard.getLogs();
    * ```
    */
   getLogs(
     query: DashboardGetLogsParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<DashboardGetLogsResponse> {
-    return this._client.get('/dashboard/logs', { query, ...options, __security: {} });
+    return this._client.get('/dashboard/logs', { query, ...options, __security: { bearerAuth: true } });
   }
 
   /**
@@ -52,11 +55,11 @@ export class Dashboard extends APIResource {
    *
    * @example
    * ```ts
-   * const response = await client.dashboard.getStats();
+   * const statsResponse = await client.dashboard.getStats();
    * ```
    */
-  getStats(options?: RequestOptions): APIPromise<DashboardGetStatsResponse> {
-    return this._client.get('/dashboard/stats', { ...options, __security: {} });
+  getStats(options?: RequestOptions): APIPromise<StatsResponse> {
+    return this._client.get('/dashboard/stats', { ...options, __security: { bearerAuth: true } });
   }
 
   /**
@@ -79,51 +82,47 @@ export class Dashboard extends APIResource {
     return this._client.get('/dashboard/live', {
       ...options,
       headers: buildHeaders([{ Accept: '*/*' }, options?.headers]),
-      __security: {},
+      __security: { bearerAuth: true },
     });
   }
 }
 
-export type DashboardGetLogsResponse = Array<DashboardGetLogsResponse.DashboardGetLogsResponseItem>;
-
-export namespace DashboardGetLogsResponse {
+/**
+ * A single recorded rate-limit check event.
+ */
+export interface CheckLogEntry {
   /**
-   * A single recorded rate-limit check event.
+   * Algorithm used for the check.
    */
-  export interface DashboardGetLogsResponseItem {
-    /**
-     * Algorithm used for the check.
-     */
-    algo?: 'fixed' | 'sliding' | 'token_bucket';
+  algo?: 'fixed' | 'sliding' | 'token_bucket';
 
-    /**
-     * Whether the request was allowed or blocked.
-     */
-    allowed?: boolean;
+  /**
+   * Whether the request was allowed or blocked.
+   */
+  allowed?: boolean;
 
-    /**
-     * IP address of the caller.
-     */
-    ip?: string;
+  /**
+   * IP address of the caller.
+   */
+  ip?: string;
 
-    /**
-     * The identifier that was rate-limited.
-     */
-    key?: string;
+  /**
+   * The identifier that was rate-limited.
+   */
+  key?: string;
 
-    /**
-     * When the check occurred.
-     */
-    timestamp?: string;
+  /**
+   * When the check occurred.
+   */
+  timestamp?: string;
 
-    /**
-     * Owner user ID.
-     */
-    userId?: number;
-  }
+  /**
+   * Owner user ID.
+   */
+  userId?: number;
 }
 
-export interface DashboardGetStatsResponse {
+export interface StatsResponse {
   /**
    * Number of non-revoked API keys for this user.
    */
@@ -145,6 +144,8 @@ export interface DashboardGetStatsResponse {
   total_requests?: number;
 }
 
+export type DashboardGetLogsResponse = Array<CheckLogEntry>;
+
 export interface DashboardGetLogsParams {
   /**
    * Maximum number of log entries to return. Defaults to 50.
@@ -157,24 +158,28 @@ Dashboard.Rules = Rules;
 
 export declare namespace Dashboard {
   export {
+    type CheckLogEntry as CheckLogEntry,
+    type StatsResponse as StatsResponse,
     type DashboardGetLogsResponse as DashboardGetLogsResponse,
-    type DashboardGetStatsResponse as DashboardGetStatsResponse,
     type DashboardGetLogsParams as DashboardGetLogsParams,
   };
 
   export {
     Apikeys as Apikeys,
-    type ApikeyCreateResponse as ApikeyCreateResponse,
-    type ApikeyListResponse as ApikeyListResponse,
-    type ApikeyRevokeResponse as ApikeyRevokeResponse,
+    type APIKeyListResponse as APIKeyListResponse,
+    type APIKeyObject as APIKeyObject,
+    type CreateAPIKeyResponse as CreateAPIKeyResponse,
+    type RevokeAPIKeyResponse as RevokeAPIKeyResponse,
     type ApikeyCreateParams as ApikeyCreateParams,
   };
 
   export {
     Rules as Rules,
+    type CreateRuleRequest as CreateRuleRequest,
+    type DeleteRuleResponse as DeleteRuleResponse,
     type RuleObject as RuleObject,
+    type UpdateRuleRequest as UpdateRuleRequest,
     type RuleListResponse as RuleListResponse,
-    type RuleDeleteResponse as RuleDeleteResponse,
     type RuleCreateParams as RuleCreateParams,
     type RuleUpdateParams as RuleUpdateParams,
   };

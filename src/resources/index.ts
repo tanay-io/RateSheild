@@ -4,8 +4,9 @@ export { Auth, type AuthResponse, type UserDto, type AuthLoginParams, type AuthR
 export { Check, type CheckEnforceRateLimitResponse, type CheckEnforceRateLimitParams } from './check';
 export {
   Dashboard,
+  type CheckLogEntry,
+  type StatsResponse,
   type DashboardGetLogsResponse,
-  type DashboardGetStatsResponse,
   type DashboardGetLogsParams,
 } from './dashboard/dashboard';
 export { Health, type HealthCheckResponse } from './health';

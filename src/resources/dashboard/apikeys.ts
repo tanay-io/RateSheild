@@ -16,13 +16,14 @@ export class Apikeys extends APIResource {
    *
    * @example
    * ```ts
-   * const apikey = await client.dashboard.apikeys.create({
-   *   name: 'my-production-key',
-   * });
+   * const createAPIKeyResponse =
+   *   await client.dashboard.apikeys.create({
+   *     name: 'my-production-key',
+   *   });
    * ```
    */
-  create(body: ApikeyCreateParams, options?: RequestOptions): APIPromise<ApikeyCreateResponse> {
-    return this._client.post('/dashboard/apikeys', { body, ...options, __security: {} });
+  create(body: ApikeyCreateParams, options?: RequestOptions): APIPromise<CreateAPIKeyResponse> {
+    return this._client.post('/dashboard/apikeys', { body, ...options, __security: { bearerAuth: true } });
   }
 
   /**
@@ -31,11 +32,12 @@ export class Apikeys extends APIResource {
    *
    * @example
    * ```ts
-   * const apikeys = await client.dashboard.apikeys.list();
+   * const apiKeyListResponse =
+   *   await client.dashboard.apikeys.list();
    * ```
    */
-  list(options?: RequestOptions): APIPromise<ApikeyListResponse> {
-    return this._client.get('/dashboard/apikeys', { ...options, __security: {} });
+  list(options?: RequestOptions): APIPromise<APIKeyListResponse> {
+    return this._client.get('/dashboard/apikeys', { ...options, __security: { bearerAuth: true } });
   }
 
   /**
@@ -47,50 +49,52 @@ export class Apikeys extends APIResource {
    *
    * @example
    * ```ts
-   * const response = await client.dashboard.apikeys.revoke(7);
+   * const revokeAPIKeyResponse =
+   *   await client.dashboard.apikeys.revoke(7);
    * ```
    */
-  revoke(keyID: number, options?: RequestOptions): APIPromise<ApikeyRevokeResponse> {
-    return this._client.delete(path`/dashboard/apikeys/${keyID}`, { ...options, __security: {} });
+  revoke(keyID: number, options?: RequestOptions): APIPromise<RevokeAPIKeyResponse> {
+    return this._client.delete(path`/dashboard/apikeys/${keyID}`, {
+      ...options,
+      __security: { bearerAuth: true },
+    });
   }
+}
+
+export interface APIKeyListResponse {
+  keys?: Array<APIKeyObject>;
+}
+
+/**
+ * Metadata about a single API key. The raw key is never returned here.
+ */
+export interface APIKeyObject {
+  id?: number;
+
+  createdAt?: string;
+
+  name?: string;
+
+  /**
+   * First 6 characters of the raw key, for identification.
+   */
+  prefix?: string;
+
+  revoked?: boolean;
 }
 
 /**
  * Contains the **raw** API key. This is the **only** time the full key is returned
  * — store it securely.
  */
-export interface ApikeyCreateResponse {
+export interface CreateAPIKeyResponse {
   /**
    * 64-character hex API key (32 random bytes).
    */
   key?: string;
 }
 
-export interface ApikeyListResponse {
-  keys?: Array<ApikeyListResponse.Key>;
-}
-
-export namespace ApikeyListResponse {
-  /**
-   * Metadata about a single API key. The raw key is never returned here.
-   */
-  export interface Key {
-    id?: number;
-
-    createdAt?: string;
-
-    name?: string;
-
-    /**
-     * First 6 characters of the raw key, for identification.
-     */
-    prefix?: string;
-
-    revoked?: boolean;
-  }
-}
-
-export interface ApikeyRevokeResponse {
+export interface RevokeAPIKeyResponse {
   message?: string;
 }
 
@@ -103,9 +107,10 @@ export interface ApikeyCreateParams {
 
 export declare namespace Apikeys {
   export {
-    type ApikeyCreateResponse as ApikeyCreateResponse,
-    type ApikeyListResponse as ApikeyListResponse,
-    type ApikeyRevokeResponse as ApikeyRevokeResponse,
+    type APIKeyListResponse as APIKeyListResponse,
+    type APIKeyObject as APIKeyObject,
+    type CreateAPIKeyResponse as CreateAPIKeyResponse,
+    type RevokeAPIKeyResponse as RevokeAPIKeyResponse,
     type ApikeyCreateParams as ApikeyCreateParams,
   };
 }

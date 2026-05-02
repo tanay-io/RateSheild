@@ -21,10 +21,11 @@ import { Auth, AuthLoginParams, AuthRegisterParams, AuthResponse, UserDto } from
 import { Check, CheckEnforceRateLimitParams, CheckEnforceRateLimitResponse } from './resources/check';
 import { Health, HealthCheckResponse } from './resources/health';
 import {
+  CheckLogEntry,
   Dashboard,
   DashboardGetLogsParams,
   DashboardGetLogsResponse,
-  DashboardGetStatsResponse,
+  StatsResponse,
 } from './resources/dashboard/dashboard';
 import { type Fetch } from './internal/builtin-types';
 import { HeadersLike, NullableHeaders, buildHeaders } from './internal/headers';
@@ -47,11 +48,18 @@ type Environment = keyof typeof environments;
 
 export interface ClientOptions {
   /**
+   * JWT issued by `POST /auth/register` or `POST /auth/login`.
+   * Valid for 24 hours.
+   *
+   */
+  bearerToken?: string | null | undefined;
+
+  /**
    * Raw API key returned by `POST /dashboard/apikeys`.
    * The key is a 64-character hex string (32 random bytes).
    *
    */
-  apiKey?: string | undefined;
+  apiKey?: string | null | undefined;
 
   /**
    * Specifies the environment to use for the API.
@@ -135,7 +143,8 @@ export interface ClientOptions {
  * API Client for interfacing with the Ratesheild API.
  */
 export class Ratesheild {
-  apiKey: string;
+  bearerToken: string | null;
+  apiKey: string | null;
 
   baseURL: string;
   maxRetries: number;
@@ -152,7 +161,8 @@ export class Ratesheild {
   /**
    * API Client for interfacing with the Ratesheild API.
    *
-   * @param {string | undefined} [opts.apiKey=process.env['RATESHEILD_API_KEY'] ?? undefined]
+   * @param {string | null | undefined} [opts.bearerToken=process.env['RATESHEILD_BEARER_TOKEN'] ?? null]
+   * @param {string | null | undefined} [opts.apiKey=process.env['RATESHEILD_API_KEY'] ?? null]
    * @param {Environment} [opts.environment=production] - Specifies the environment URL to use for the API.
    * @param {string} [opts.baseURL=process.env['RATESHEILD_BASE_URL'] ?? https://ratesheild.onrender.com] - Override the default base URL for the API.
    * @param {number} [opts.timeout=1 minute] - The maximum amount of time (in milliseconds) the client will wait for a response before timing out.
@@ -164,16 +174,12 @@ export class Ratesheild {
    */
   constructor({
     baseURL = readEnv('RATESHEILD_BASE_URL'),
-    apiKey = readEnv('RATESHEILD_API_KEY'),
+    bearerToken = readEnv('RATESHEILD_BEARER_TOKEN') ?? null,
+    apiKey = readEnv('RATESHEILD_API_KEY') ?? null,
     ...opts
   }: ClientOptions = {}) {
-    if (apiKey === undefined) {
-      throw new Errors.RatesheildError(
-        "The RATESHEILD_API_KEY environment variable is missing or empty; either provide it, or instantiate the Ratesheild client with an apiKey option, like new Ratesheild({ apiKey: 'My API Key' }).",
-      );
-    }
-
     const options: ClientOptions = {
+      bearerToken,
       apiKey,
       ...opts,
       baseURL,
@@ -215,6 +221,7 @@ export class Ratesheild {
 
     this._options = options;
 
+    this.bearerToken = bearerToken;
     this.apiKey = apiKey;
   }
 
@@ -232,6 +239,7 @@ export class Ratesheild {
       logLevel: this.logLevel,
       fetch: this.fetch,
       fetchOptions: this.fetchOptions,
+      bearerToken: this.bearerToken,
       apiKey: this.apiKey,
       ...options,
     });
@@ -250,17 +258,46 @@ export class Ratesheild {
   }
 
   protected validateHeaders({ values, nulls }: NullableHeaders) {
-    return;
+    if (this.bearerToken && values.get('authorization')) {
+      return;
+    }
+    if (nulls.has('authorization')) {
+      return;
+    }
+
+    if (this.apiKey && values.get('x-api-key')) {
+      return;
+    }
+    if (nulls.has('x-api-key')) {
+      return;
+    }
+
+    throw new Error(
+      'Could not resolve authentication method. Expected either bearerToken or apiKey to be set. Or for one of the "Authorization" or "X-API-Key" headers to be explicitly omitted',
+    );
   }
 
   protected async authHeaders(
     opts: FinalRequestOptions,
-    schemes: { apiKeyAuth?: boolean },
+    schemes: { bearerAuth?: boolean; apiKeyAuth?: boolean },
   ): Promise<NullableHeaders | undefined> {
-    return buildHeaders([schemes.apiKeyAuth ? await this.apiKeyAuth(opts) : null]);
+    return buildHeaders([
+      schemes.bearerAuth ? await this.bearerAuth(opts) : null,
+      schemes.apiKeyAuth ? await this.apiKeyAuth(opts) : null,
+    ]);
+  }
+
+  protected async bearerAuth(opts: FinalRequestOptions): Promise<NullableHeaders | undefined> {
+    if (this.bearerToken == null) {
+      return undefined;
+    }
+    return buildHeaders([{ Authorization: `Bearer ${this.bearerToken}` }]);
   }
 
   protected async apiKeyAuth(opts: FinalRequestOptions): Promise<NullableHeaders | undefined> {
+    if (this.apiKey == null) {
+      return undefined;
+    }
     return buildHeaders([{ 'X-API-Key': this.apiKey }]);
   }
 
@@ -690,7 +727,7 @@ export class Ratesheild {
         ...(options.timeout ? { 'X-Stainless-Timeout': String(Math.trunc(options.timeout / 1000)) } : {}),
         ...getPlatformHeaders(),
       },
-      await this.authHeaders(options, options.__security ?? { apiKeyAuth: true }),
+      await this.authHeaders(options, options.__security ?? { bearerAuth: true, apiKeyAuth: true }),
       this._options.defaultHeaders,
       bodyHeaders,
       options.headers,
@@ -809,8 +846,9 @@ export declare namespace Ratesheild {
 
   export {
     Dashboard as Dashboard,
+    type CheckLogEntry as CheckLogEntry,
+    type StatsResponse as StatsResponse,
     type DashboardGetLogsResponse as DashboardGetLogsResponse,
-    type DashboardGetStatsResponse as DashboardGetStatsResponse,
     type DashboardGetLogsParams as DashboardGetLogsParams,
   };
 
