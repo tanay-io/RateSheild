@@ -50,17 +50,15 @@ export interface AuthResponse {
    */
   token?: string;
 
-  user?: AuthResponse.User;
+  user?: UserDto;
 }
 
-export namespace AuthResponse {
-  export interface User {
-    id?: number;
+export interface UserDto {
+  id?: number;
 
-    email?: string;
+  email?: string;
 
-    name?: string;
-  }
+  name?: string;
 }
 
 export interface AuthLoginParams {
@@ -80,6 +78,7 @@ export interface AuthRegisterParams {
 export declare namespace Auth {
   export {
     type AuthResponse as AuthResponse,
+    type UserDto as UserDto,
     type AuthLoginParams as AuthLoginParams,
     type AuthRegisterParams as AuthRegisterParams,
   };
