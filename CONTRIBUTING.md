@@ -42,15 +42,15 @@ If you’d like to use the repository from source, you can either install from g
 To install via git:
 
 ```sh
-$ npm install git+ssh://git@github.com:stainless-sdks/ratesheild-typescript.git
+$ npm install git+ssh://git@github.com:tanay-io/RateSheild.git
 ```
 
 Alternatively, to link a local copy of the repo:
 
 ```sh
 # Clone
-$ git clone https://www.github.com/stainless-sdks/ratesheild-typescript
-$ cd ratesheild-typescript
+$ git clone https://www.github.com/tanay-io/RateSheild
+$ cd RateSheild
 
 # With yarn
 $ yarn link
