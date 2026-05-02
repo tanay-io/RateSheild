@@ -25,7 +25,7 @@ export class Rules extends APIResource {
    * ```
    */
   create(body: RuleCreateParams, options?: RequestOptions): APIPromise<RuleObject> {
-    return this._client.post('/dashboard/rules', { body, ...options, __security: {} });
+    return this._client.post('/dashboard/rules', { body, ...options, __security: { bearerAuth: true } });
   }
 
   /**
@@ -41,7 +41,11 @@ export class Rules extends APIResource {
    * ```
    */
   update(ruleID: number, body: RuleUpdateParams, options?: RequestOptions): APIPromise<RuleObject> {
-    return this._client.put(path`/dashboard/rules/${ruleID}`, { body, ...options, __security: {} });
+    return this._client.put(path`/dashboard/rules/${ruleID}`, {
+      body,
+      ...options,
+      __security: { bearerAuth: true },
+    });
   }
 
   /**
@@ -53,7 +57,7 @@ export class Rules extends APIResource {
    * ```
    */
   list(options?: RequestOptions): APIPromise<RuleListResponse> {
-    return this._client.get('/dashboard/rules', { ...options, __security: {} });
+    return this._client.get('/dashboard/rules', { ...options, __security: { bearerAuth: true } });
   }
 
   /**
@@ -62,12 +66,32 @@ export class Rules extends APIResource {
    *
    * @example
    * ```ts
-   * const rule = await client.dashboard.rules.delete(1);
+   * const deleteRuleResponse =
+   *   await client.dashboard.rules.delete(1);
    * ```
    */
-  delete(ruleID: number, options?: RequestOptions): APIPromise<RuleDeleteResponse> {
-    return this._client.delete(path`/dashboard/rules/${ruleID}`, { ...options, __security: {} });
+  delete(ruleID: number, options?: RequestOptions): APIPromise<DeleteRuleResponse> {
+    return this._client.delete(path`/dashboard/rules/${ruleID}`, {
+      ...options,
+      __security: { bearerAuth: true },
+    });
   }
+}
+
+export interface CreateRuleRequest {
+  algo: 'fixed' | 'sliding' | 'token_bucket';
+
+  limit: number;
+
+  routePattern: string;
+
+  window: number;
+
+  keyBy?: string;
+}
+
+export interface DeleteRuleResponse {
+  message?: string;
 }
 
 /**
@@ -105,11 +129,19 @@ export interface RuleObject {
   window?: number;
 }
 
-export type RuleListResponse = Array<RuleObject>;
+export interface UpdateRuleRequest {
+  algo?: 'fixed' | 'sliding' | 'token_bucket';
 
-export interface RuleDeleteResponse {
-  message?: string;
+  keyBy?: string;
+
+  limit?: number;
+
+  routePattern?: string;
+
+  window?: number;
 }
+
+export type RuleListResponse = Array<RuleObject>;
 
 export interface RuleCreateParams {
   algo: 'fixed' | 'sliding' | 'token_bucket';
@@ -137,9 +169,11 @@ export interface RuleUpdateParams {
 
 export declare namespace Rules {
   export {
+    type CreateRuleRequest as CreateRuleRequest,
+    type DeleteRuleResponse as DeleteRuleResponse,
     type RuleObject as RuleObject,
+    type UpdateRuleRequest as UpdateRuleRequest,
     type RuleListResponse as RuleListResponse,
-    type RuleDeleteResponse as RuleDeleteResponse,
     type RuleCreateParams as RuleCreateParams,
     type RuleUpdateParams as RuleUpdateParams,
   };

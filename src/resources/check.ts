@@ -42,6 +42,7 @@ export class Check extends APIResource {
       body,
       ...options,
       headers: buildHeaders([{ Accept: 'text/plain' }, options?.headers]),
+      __security: { apiKeyAuth: true },
     });
   }
 }

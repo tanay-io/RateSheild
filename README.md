@@ -11,11 +11,8 @@ It is generated with [Stainless](https://www.stainless.com/).
 ## Installation
 
 ```sh
-npm install git+ssh://git@github.com:stainless-sdks/ratesheild-typescript.git
+npm install ratesheild
 ```
-
-> [!NOTE]
-> Once this package is [published to npm](https://www.stainless.com/docs/guides/publish), this will become: `npm install ratesheild`
 
 ## Usage
 
@@ -26,10 +23,16 @@ The full API of this library can be found in [api.md](api.md).
 import Ratesheild from 'ratesheild';
 
 const client = new Ratesheild({
+  apiKey: process.env['RATESHEILD_API_KEY'], // This is the default and can be omitted
   environment: 'environment_1', // defaults to 'production'
 });
 
-const response = await client.health.check();
+const response = await client.check.enforceRateLimit({
+  key: 'user:42',
+  limit: 100,
+  window: 60,
+  algo: 'sliding',
+});
 ```
 
 ### Request & Response types
@@ -223,7 +226,7 @@ parameter. This library doesn't validate at runtime that the request matches the
 send will be sent as-is.
 
 ```ts
-client.health.check({
+client.check.enforceRateLimit({
   // ...
   // @ts-expect-error baz is not yet public
   baz: 'undocumented option',
@@ -333,7 +336,7 @@ This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) con
 
 We take backwards-compatibility seriously and work hard to ensure you can rely on a smooth upgrade experience.
 
-We are keen for your feedback; please open an [issue](https://www.github.com/stainless-sdks/ratesheild-typescript/issues) with questions, bugs, or suggestions.
+We are keen for your feedback; please open an [issue](https://www.github.com/tanay-io/RateSheild/issues) with questions, bugs, or suggestions.
 
 ## Requirements
 
