@@ -100,6 +100,7 @@ func main() {
 	cfg := Config{
 		Addr:             port,
 		WSAllowedOrigins: splitCSV(getEnv("WS_ALLOWED_ORIGINS", "")),
+		CORSAllowedOrigins: splitCSV(getEnv("CORS_ALLOWED_ORIGINS", "")),
 	}
 	server := API{
 		Config:    cfg,

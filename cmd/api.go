@@ -32,13 +32,19 @@ type API struct {
 type Config struct {
 	Addr             string
 	WSAllowedOrigins []string
+	CORSAllowedOrigins []string
 }
 
 func (a *API) mount() http.Handler {
 	r := chi.NewRouter()
 
+	allowedOrigins := []string{"http://localhost:*", "http://127.0.0.1:*"} // allow any localhost port
+	if len(a.Config.CORSAllowedOrigins) > 0 {
+		allowedOrigins = append(allowedOrigins, a.Config.CORSAllowedOrigins...)
+	}
+
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:*", "http://127.0.0.1:*"}, // allow any localhost port
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-API-Key"},
 		ExposedHeaders:   []string{"Link"},
