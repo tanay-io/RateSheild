@@ -1,4 +1,4 @@
 configured_endpoints: 14
-openapi_spec_url: https://storage.googleapis.com/stainless-sdk-openapi-specs/na-dash/ratesheild-1842865d2596b0be4fa1e535a6894d9bfd2b5b3b31ce48bb93ef625b9c3c65f8.yml
+openapi_spec_url: https://storage.googleapis.com/stainless-sdk-openapi-specs/na-dash/ratesheild-0aaa2005d56c224980b30cf752f20b3bc88f43fa9125b11cbd2979c317060436.yml
 openapi_spec_hash: 8f7b7dcf75788905258615ca577ea32c
-config_hash: e4f05c779e7a810ccd42e0978fb43656
+config_hash: 07e4fe15797f16bb3bf9e416683671d7
