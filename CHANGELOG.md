@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 (2026-05-02)
+
+Full Changelog: [v0.1.0...v0.2.0](https://github.com/tanay-io/RateSheild/compare/v0.1.0...v0.2.0)
+
+### Features
+
+* **api:** manual updates ([7aa64bb](https://github.com/tanay-io/RateSheild/commit/7aa64bb9a32c2acc5b3424ed05f0e8de8fd3b6c3))
+
 ## 0.1.0 (2026-05-02)
 
 Full Changelog: [v0.0.1...v0.1.0](https://github.com/tanay-io/RateSheild/compare/v0.0.1...v0.1.0)
