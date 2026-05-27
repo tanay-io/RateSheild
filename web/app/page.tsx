@@ -53,7 +53,7 @@ export default function HomePage() {
       <footer className="flex h-[60px] items-center justify-between border-t border-white/[0.06] px-6 text-xs text-white/30 md:px-8">
         <span>RateShield 2026</span>
         <div className="flex gap-6">
-          <a className="transition hover:text-white/70" href="#docs">Docs</a>
+          <a className="transition hover:text-white/70" href="https://github.com/tanay-io/RateSheild" target="_blank" rel="noopener noreferrer">Docs</a>
           <a className="transition hover:text-white/70" href="#privacy">Privacy</a>
           <a className="transition hover:text-white/70" href="#terms">Terms</a>
         </div>
@@ -86,7 +86,7 @@ function StatsGrid() {
     ["3", "ALGORITHMS"]
   ];
   return (
-    <section id="pricing" className="mx-auto max-w-[1200px] px-6 py-20 md:px-8">
+    <section className="mx-auto max-w-[1200px] px-6 py-20 md:px-8">
       <div className="mb-6 text-[12px] font-medium uppercase tracking-[0.1em] text-white/30">WHY RATESHIELD</div>
       <div className="grid gap-px md:grid-cols-4">
         {stats.map(([value, label], index) => (
@@ -132,29 +132,28 @@ function WhySection() {
 
 function CodeBlock() {
   return (
-    <div id="docs" className="h-max rounded-xl border border-white/[0.08] bg-[#111111]">
+    <div className="h-max rounded-xl border border-white/[0.08] bg-[#111111]">
       <div className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-4">
         <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#FFBD2E]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#28CA42]" />
-        <span className="ml-3 font-mono text-[13px] text-white/40">checkout.ts</span>
+        <span className="ml-3 font-mono text-[13px] text-white/40">enforce.sh</span>
       </div>
       <pre className="overflow-x-auto p-6 font-mono text-[13px] leading-7 text-[#EEFFFF]">
-        <code>{`import { rateshield } from "@rateshield/sdk";
+        <code>{`# Create a rate-limit rule
+curl -X POST https://ratesheild.onrender.com/check \\
+  -H "X-API-Key: YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "key": "user:123",
+    "algo": "sliding",
+    "window": 60,
+    "limit": 100
+  }'
 
-const rs = rateshield({ key: process.env.RSH_KEY });
-
-app.post("/api/checkout", async (req, res) => {
-  const { allowed, reset } = await rs.check({
-    route: "/api/checkout",
-    keyBy: "user",
-    userId: req.user.id,
-  });
-
-  if (!allowed) return res.status(429).json({ resetAt: reset });
-
-  // ... handle request
-});`}</code>
+# Response
+# 200 OK   → request allowed
+# 429      → rate limit exceeded`}</code>
       </pre>
     </div>
   );

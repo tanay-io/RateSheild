@@ -9,11 +9,9 @@ export function LandingNavbar() {
         <ShieldLogo />
       </Link>
       <nav className="hidden items-center gap-8 text-sm text-white/60 md:flex">
-        {["Product", "Features", "Docs", "Pricing"].map((item) => (
-          <a key={item} href={`#${item.toLowerCase()}`} className="transition duration-150 hover:text-white">
-            {item}
-          </a>
-        ))}
+        <a href="#product" className="transition duration-150 hover:text-white">Product</a>
+        <a href="#features" className="transition duration-150 hover:text-white">Features</a>
+        <a href="https://github.com/tanay-io/RateSheild" target="_blank" rel="noopener noreferrer" className="transition duration-150 hover:text-white">Docs</a>
       </nav>
       <div className="flex items-center gap-4">
         <Link href="/login" className="text-sm text-white/60 transition hover:text-white">
