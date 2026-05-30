@@ -10,4 +10,5 @@ type CheckLogEntry struct {
 	IP        string    `json:"ip"`
 	Timestamp time.Time `json:"timestamp"`
 	UserID    uint      `json:"userId"`
+	LatencyMs int64     `json:"latencyMs"`
 }

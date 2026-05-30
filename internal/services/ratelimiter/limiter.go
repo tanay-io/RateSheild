@@ -50,7 +50,9 @@ func (s *RateLimiterService) AllowAndLog(
 	ip string,
 	userID uint,
 ) (models.RateLimitResponse, error) {
+	start := time.Now()
 	res, err := s.Allow(ctx, key, window, limit, algo)
+	elapsed := time.Since(start)
 	if err != nil {
 		return res, err
 	}
@@ -62,6 +64,7 @@ func (s *RateLimiterService) AllowAndLog(
 		IP:        ip,
 		Timestamp: time.Now().UTC(),
 		UserID:    userID,
+		LatencyMs: elapsed.Milliseconds(),
 	}
 	
 	go func() {

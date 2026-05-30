@@ -59,7 +59,7 @@ export default function LogsPage() {
               <div><AlgorithmBadge algo={log.algo} /></div>
               <div className="font-mono text-xs text-white/50">{log.ip}</div>
               <div><StatusBadge allowed={log.allowed} /></div>
-              <div className="font-mono text-xs text-white/40">--</div>
+              <div className="font-mono text-xs text-white/40">{log.latencyMs > 0 ? `${log.latencyMs}ms` : "--"}</div>
             </div>
           ))}
         </div>
