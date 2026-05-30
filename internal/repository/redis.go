@@ -88,7 +88,6 @@ func (a *Algo) CheckSlidingWindow(ctx context.Context, key string, window, limit
 	if remaining < 0 {
 		remaining = 0
 	}
-	fmt.Println("COUNT:", count, "LIMIT:", limit)
 	return models.RateLimitResponse{
 		Allowed:    allowed,
 		Limit:      limit,
@@ -100,7 +99,7 @@ func (a *Algo) CheckSlidingWindow(ctx context.Context, key string, window, limit
 func (a *Algo) CheckTokenBucket(ctx context.Context, key string, window int, limit int, algo string) (models.RateLimitResponse, error) {
 
 	now := time.Now().UnixMilli()
-	redisKey := fmt.Sprintf("r1:%s:%s", algo, key)
+	redisKey := fmt.Sprintf("rl:%s:%s", algo, key)
 
 	capacity := int64(limit)
 	windowMs := int64(window)
@@ -201,7 +200,7 @@ func (a *Algo) CheckSlidingWindow_via_Lua(ctx context.Context, key string, windo
 
 func (a *Algo) CheckTokenBucket_via_Lua(ctx context.Context, key string, window int, limit int, algo string) (models.RateLimitResponse, error) {
 	now := time.Now().UnixMilli()
-	redisKey := fmt.Sprintf("r1:%s:%s", algo, key)
+	redisKey := fmt.Sprintf("rl:%s:%s", algo, key)
 	capacity := int64(limit)
 	windowMs := int64(window)
 	res, err := tokenBucketScript.Run(
