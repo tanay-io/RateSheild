@@ -31,6 +31,7 @@ export type CheckLogEntry = {
   ip: string;
   timestamp: string;
   userID: number;
+  latencyMs: number;
 };
 
 export type Rule = {

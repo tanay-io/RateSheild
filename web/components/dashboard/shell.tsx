@@ -17,7 +17,7 @@ const navGroups = [
     label: "MANAGE",
     items: [
       { href: "/dashboard/api-keys", icon: Key, label: "API Keys" },
-      { href: "/dashboard/rules", icon: SlidersHorizontal, label: "Rules" }
+      { href: "/dashboard/rules", icon: SlidersHorizontal, label: "Rules", comingSoon: true }
     ]
   },
   { label: "OBSERVE", items: [{ href: "/dashboard/logs", icon: FileText, label: "Logs" }] }
@@ -80,7 +80,17 @@ function DashboardFrame({ children }: { children: React.ReactNode }) {
                 {group.items.map((item) => {
                   const active = pathname === item.href;
                   const Icon = item.icon;
-                  return (
+                  const comingSoon = "comingSoon" in item && item.comingSoon;
+                  return comingSoon ? (
+                    <div
+                      key={item.href}
+                      className="relative flex h-9 cursor-not-allowed items-center gap-2 px-4 text-[13px] text-white/25"
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                      <span className="ml-auto rounded bg-white/[0.08] px-1.5 py-0.5 text-[10px] font-medium text-white/30">Soon</span>
+                    </div>
+                  ) : (
                     <Link
                       key={item.href}
                       href={item.href}

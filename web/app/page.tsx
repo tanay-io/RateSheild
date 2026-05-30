@@ -40,6 +40,7 @@ export default function HomePage() {
       <Ticker />
       <StatsGrid />
       <WhySection />
+      <WhyNotDIYSection />
       <section className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
         <h2 className="text-[48px] font-bold leading-[1.08] md:text-[70px]">
           Stop guessing.
@@ -63,7 +64,7 @@ export default function HomePage() {
 }
 
 function Ticker() {
-  const items = ["FIXED WINDOW", "SLIDING WINDOW", "TOKEN BUCKET", "REDIS-BACKED", "EDGE-READY", "OPEN SOURCE", "<1MS", "GLOBALLY CONSISTENT"];
+  const items = ["FIXED WINDOW", "SLIDING WINDOW", "TOKEN BUCKET", "REDIS-BACKED", "EDGE-READY", "OPEN SOURCE", "~5MS MEDIAN", "GLOBALLY CONSISTENT"];
   const loop = [...items, ...items, ...items, ...items];
   return (
     <div className="h-10 overflow-hidden border-y border-white/[0.06] bg-white/[0.03]">
@@ -80,8 +81,8 @@ function Ticker() {
 
 function StatsGrid() {
   const stats = [
-    ["<1ms", "MEDIAN LATENCY"],
-    ["99.99%", "AVAILABILITY"],
+    ["~5ms", "MEDIAN LATENCY"],
+    ["OPEN SOURCE", "MIT LICENSED"],
     ["12k+", "CHECKS / SEC / NODE"],
     ["3", "ALGORITHMS"]
   ];
@@ -126,6 +127,30 @@ function WhySection() {
         </div>
       </div>
       <CodeBlock />
+    </section>
+  );
+}
+
+function WhyNotDIYSection() {
+  const problems = [
+    ["Race conditions", "Redis INCR + EXPIRE is two commands. Between them, keys leak. RateShield uses Lua scripts for atomic check-and-increment."],
+    ["Sliding window is hard", "You need sorted sets, ZREMRANGEBYSCORE, ZCARD, and cleanup logic — all atomically. One missed edge case and your limits drift."],
+    ["Token bucket is harder", "Hash maps, fractional refill math, last-refill timestamps. Get the math wrong and you either throttle users or let traffic through."],
+    ["Multi-tenant from scratch", "Per-user isolation, API key management, revocation, audit logs, dashboard. That's weeks of work before you write your first rate limit."],
+  ];
+  return (
+    <section className="mx-auto max-w-[1200px] px-6 py-24 md:px-8">
+      <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.1em] text-white/30">WHY NOT DIY</div>
+      <h2 className="text-4xl font-bold leading-tight">Why not just use Redis INCR?</h2>
+      <p className="mt-4 max-w-[600px] text-[15px] leading-7 text-white/50">You could. Here's what you'd also have to build and maintain.</p>
+      <div className="mt-12 grid gap-px md:grid-cols-2">
+        {problems.map(([title, body]) => (
+          <div key={title as string} className="border-white/[0.08] p-6 md:border-r md:[&:nth-child(2n)]:border-r-0">
+            <div className="text-sm font-medium">{title as string}</div>
+            <p className="mt-2 text-[13px] leading-6 text-white/50">{body as string}</p>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
