@@ -18,13 +18,43 @@ npm install rateshield-sdk
 
 The full API of this library can be found in [api.md](api.md).
 
+Set your API key before creating the client. The SDK reads `rateshield-sdk_API_KEY` by default.
+
+In a `.env` file or hosting provider dashboard, add:
+
+```env
+rateshield-sdk_API_KEY=your_api_key
+```
+
+macOS/Linux, for a single command:
+
+```sh
+env 'rateshield-sdk_API_KEY=your_api_key' node app.mjs
+```
+
+Windows PowerShell:
+
+```powershell
+Set-Item -Path Env:rateshield-sdk_API_KEY -Value "your_api_key"
+```
+
+Because the default environment variable name contains a hyphen, you can also use your own environment variable and pass it explicitly:
+
+```js
+const client = new RateshieldSDK({
+  apiKey: process.env.RATESHIELD_SDK_API_KEY,
+});
+```
+
+If you are using a default CommonJS Node.js project, either save the example as `.mjs`, set `"type": "module"` in `package.json`, or use the CommonJS example below.
+
 <!-- prettier-ignore -->
 ```js
 import RateshieldSDK from 'rateshield-sdk';
 
 const client = new RateshieldSDK({
   apiKey: process.env['rateshield-sdk_API_KEY'], // This is the default and can be omitted
-  environment: 'environment_1', // defaults to 'production'
+  // Defaults to the production API.
 });
 
 const response = await client.check.enforceRateLimit({
@@ -35,6 +65,31 @@ const response = await client.check.enforceRateLimit({
 });
 ```
 
+CommonJS:
+
+```js
+const RateshieldSDK = require('rateshield-sdk');
+
+async function main() {
+  const client = new RateshieldSDK({
+    apiKey: process.env['rateshield-sdk_API_KEY'],
+  });
+
+  const response = await client.check.enforceRateLimit({
+    key: 'user:42',
+    limit: 100,
+    window: 60,
+    algo: 'sliding',
+  });
+
+  console.log(response);
+}
+
+main();
+```
+
+The `environment: 'environment_1'` option is for local development and points to `http://localhost:3000`. Do not use it for production API calls.
+
 ### Request & Response types
 
 This library includes TypeScript definitions for all request params and response fields. You may import and use them like so:
@@ -43,11 +98,14 @@ This library includes TypeScript definitions for all request params and response
 ```ts
 import RateshieldSDK from 'rateshield-sdk';
 
-const client = new RateshieldSDK({
-  environment: 'environment_1', // defaults to 'production'
-});
+const client = new RateshieldSDK();
 
-const response: string = await client.health.check();
+const response: string = await client.check.enforceRateLimit({
+  key: 'user:42',
+  limit: 100,
+  window: 60,
+  algo: 'sliding',
+});
 ```
 
 Documentation for each method, request param, and response field are available in docstrings and will appear on hover in most modern editors.
@@ -60,7 +118,12 @@ a subclass of `APIError` will be thrown:
 
 <!-- prettier-ignore -->
 ```ts
-const response = await client.health.check().catch(async (err) => {
+const response = await client.check.enforceRateLimit({
+  key: 'user:42',
+  limit: 100,
+  window: 60,
+  algo: 'sliding',
+}).catch(async (err) => {
   if (err instanceof RateshieldSDK.APIError) {
     console.log(err.status); // 400
     console.log(err.name); // BadRequestError
@@ -100,7 +163,12 @@ const client = new RateshieldSDK({
 });
 
 // Or, configure per-request:
-await client.health.check({
+await client.check.enforceRateLimit({
+  key: 'user:42',
+  limit: 100,
+  window: 60,
+  algo: 'sliding',
+}, {
   maxRetries: 5,
 });
 ```
@@ -117,7 +185,12 @@ const client = new RateshieldSDK({
 });
 
 // Override per-request:
-await client.health.check({
+await client.check.enforceRateLimit({
+  key: 'user:42',
+  limit: 100,
+  window: 60,
+  algo: 'sliding',
+}, {
   timeout: 5 * 1000,
 });
 ```
@@ -140,13 +213,23 @@ Unlike `.asResponse()` this method consumes the body, returning once it is parse
 ```ts
 const client = new RateshieldSDK();
 
-const response = await client.health.check().asResponse();
+const response = await client.check.enforceRateLimit({
+  key: 'user:42',
+  limit: 100,
+  window: 60,
+  algo: 'sliding',
+}).asResponse();
 console.log(response.headers.get('X-My-Header'));
 console.log(response.statusText); // access the underlying Response object
 
-const { data: response, response: raw } = await client.health.check().withResponse();
+const { data, response: raw } = await client.check.enforceRateLimit({
+  key: 'user:42',
+  limit: 100,
+  window: 60,
+  algo: 'sliding',
+}).withResponse();
 console.log(raw.headers.get('X-My-Header'));
-console.log(response);
+console.log(data);
 ```
 
 ### Logging
